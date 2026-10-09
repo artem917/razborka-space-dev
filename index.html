@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#081b25">
+  <meta name="description" content="РАЗБОРка в космосе. Разбери реактивный чайник и освободи его термоядро.">
+  <title>РАЗБОРка в космосе — Реактивный чайник</title>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./direction-feedback.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head>
+<body>
+  <main class="workshop" id="app">
+    <header class="masthead">
+      <a class="wordmark" href="./" aria-label="РАЗБОРка в космосе"><span>РАЗБОР<em>ка</em></span><small>В КОСМОСЕ</small></a>
+      <div class="station"><i></i> СЛУЖБА УТИЛИЗАЦИИ<br><b>ОРБИТАЛЬНАЯ МАСТЕРСКАЯ</b></div>
+      <button class="icon-button" id="sound" aria-label="Выключить звук" aria-pressed="true" title="Звук"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM17 8c3 2 3 6 0 8M20 5c5 4 5 10 0 14"/></svg></button>
+    </header>
+    <section class="job-heading" aria-label="Задание">
+      <div><p class="eyebrow">ЗАКАЗ № 001 <span> / </span> БЫТОВЫЕ КАТАСТРОФЫ</p><h1>Реактивный чайник<span class="title-dot">.</span></h1><p class="objective">Разбери конструкцию. Достань термоядро.</p></div>
+      <div class="progress-dial" id="progress-dial"><span id="counter">0<small>/7</small></span><b>СНЯТО</b></div>
+    </section>
+    <nav class="level-picker" aria-label="Сложность">
+      <button data-level="0" aria-pressed="true"><span>01</span> Стажёр <small>7</small></button>
+      <button data-level="1" aria-pressed="false"><span>02</span> Механик <small>12</small></button>
+      <button data-level="2" aria-pressed="false"><span>03</span> Инженер <small>20</small></button>
+    </nav>
+    <section id="stage" class="stage" aria-label="Трёхмерный чайник. Тяните для вращения, нажимайте на детали для снятия." tabindex="0">
+      <div class="viewport-note"><span class="live-dot"></span><span id="stage-status">ОЖИДАЕТ РАЗБОРКИ</span></div>
+      <div class="view-tag">3D <span>↔</span></div>
+      <div class="path-legend" aria-label="Состояния деталей"><span>↗ Свободно</span><span>↗ Перекрыто</span></div>
+      <div id="canvas-host"></div>
+      <div id="indicators" aria-hidden="true"></div>
+      <div class="stage-label"><span>ГСУ / СТЕНД 04</span><span>НЕ КАНТОВАТЬ <s>НЕ</s></span></div>
+      <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+      <div id="tutorial" class="tutorial" hidden>
+        <div class="guide-copy"><span id="guide-step">01 / 02</span><strong id="guide-title">Потяни, чтобы осмотреть</strong><p id="guide-text">Поверни чайник одним пальцем.</p></div>
+        <button id="skip-tutorial" aria-label="Пропустить обучение">Пропустить <span>×</span></button>
+      </div>
+      <div id="guide-hand" class="guide-hand" hidden aria-hidden="true"><svg viewBox="0 0 64 72"><path d="M22 37V12c0-8 11-8 11 0v17c0-6 10-6 10 0v3c1-6 10-5 10 1v5c1-5 9-4 9 2v10c0 9-7 13-10 19H29c-1-9-6-13-12-19L9 41c-5-7 3-13 8-8z"/></svg><span></span></div>
+      <div class="loading" id="loading">Подключаем магнитный стенд…</div>
+      <section id="win" class="win" hidden aria-label="Уровень завершён">
+        <div class="win-badge">✓</div><p class="eyebrow">РАЗБОРКА ЗАВЕРШЕНА</p><h2>Ядро спасено!</h2><p id="win-detail"></p>
+        <div class="win-stamp" id="win-stamp">ПОЧТИ ИСПРАВЕН</div>
+        <button id="next-level" class="primary">Следующий чайник <span>→</span></button>
+        <button id="win-restart" class="text-button">Разобрать ещё раз</button>
+      </section>
+      <div id="fatal" class="fatal" hidden><strong>Стенд не запустился</strong><p id="fatal-message"></p><button onclick="location.reload()">Попробовать снова</button></div>
+    </section>
+    <div class="work-controls">
+      <button id="restart" class="tool-button"><svg viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg><span>Заново</span></button>
+      <p><svg viewBox="0 0 24 24"><path d="M4 12c0-4 16-4 16 0s-16 4-16 0M4 8v4h4M20 16v-4h-4"/></svg>Тяни — вращай · Жми — снимай</p>
+      <button id="hint" class="tool-button"><svg viewBox="0 0 24 24"><path d="M8 16c0-3-3-3-3-7a7 7 0 0 1 14 0c0 4-3 4-3 7zM9 20h6M10 23h4"/></svg><span>Подсказка</span></button>
+    </div>
+    <aside class="inspector" aria-label="Бракыч, инспектор">
+      <svg class="brakych" viewBox="0 0 100 106" aria-hidden="true"><defs><linearGradient id="metal" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#f1e6c5"/><stop offset=".5" stop-color="#a3b4ad"/><stop offset="1" stop-color="#426d74"/></linearGradient><linearGradient id="coat" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#389a94"/><stop offset="1" stop-color="#14464c"/></linearGradient></defs><path d="M21 87Q21 72 45 72h17q23 2 23 22v12H15z" fill="url(#coat)" stroke="#0a2f39" stroke-width="3"/><path d="M45 71v12h17V70" fill="#374e54"/><path d="M48 8v11M44 8h8" stroke="#e49954" stroke-width="4"/><rect x="20" y="20" width="67" height="55" rx="16" fill="url(#metal)" stroke="#0b333c" stroke-width="3"/><rect x="14" y="39" width="9" height="24" rx="4" fill="#c87843"/><rect x="86" y="34" width="8" height="25" rx="4" fill="#c87843"/><path d="M29 32h45q7 0 7 8v13H28V38q0-6 1-6" fill="#16333e"/><path d="M34 42h13M57 40h15" stroke="#79ffdf" stroke-width="7"/><path d="m32 32 17 3m5-5 20-3" stroke="#355c63" stroke-width="5"/><path d="M46 63h19" stroke="#263f45" stroke-width="4" stroke-linecap="round"/><circle cx="28" cy="65" r="3" fill="#d5894e"/><path d="m69 91 8-15 11 6-8 15" fill="#a45c34"/><rect x="57" y="88" width="37" height="16" rx="3" fill="#e69b58" stroke="#603c2b" stroke-width="2"/><text x="62" y="100" fill="#53382b" font-size="11" font-weight="900" font-family="Arial">БРАК</text><path d="m27 84 9 13m-5-16 9 15" stroke="#d9b576" stroke-width="4"/><path d="m72 22 5 5m-49 36 4 4" stroke="#547e7c" stroke-width="2"/></svg>
+      <div><p class="inspector-name">БРАКЫЧ <span>ИНСПЕКТОР ОТК</span></p><p id="brakych-line">Чайник обычный. Просто тяга — девять тонн.</p></div>
+    </aside>
+    <footer class="small-print">РАЗБИРАЕМ ВСЁ. ДАЖЕ ЗДРАВЫЙ СМЫСЛ.</footer>
+  </main>
+  <noscript>Для 3D-чайника нужен JavaScript.</noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
