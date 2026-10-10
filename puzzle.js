@@ -12,16 +12,23 @@ export function overlap(a, b) {
 export function firstContact(moving, obstacle, direction) {
   const axis = direction.findIndex(v => v !== 0);
   if (axis < 0 || direction.filter(v => v !== 0).length !== 1 || Math.abs(direction[axis]) !== 1) throw new Error('Direction must be a signed unit axis');
-  const A = bounds(moving), B = bounds(obstacle);
-  if (![0, 1, 2].filter(i => i !== axis).every(i => A.max[i] > B.min[i] + EPS && B.max[i] > A.min[i] + EPS)) return Infinity;
-  if (direction[axis] > 0) {
-    if (B.max[axis] <= A.min[axis] + EPS) return Infinity;
-    return Math.max(0, B.min[axis] - A.max[axis]);
+  // Avoid per-cell bounds allocations: curved modules have many envelope cells.
+  // This is the same strict overlap/contact test as above, with unchanged EPS.
+  for (let i = 0; i < 3; i++) {
+    if (i === axis) continue;
+    if (moving.p[i] + moving.s[i]/2 <= obstacle.p[i] - obstacle.s[i]/2 + EPS || obstacle.p[i] + obstacle.s[i]/2 <= moving.p[i] - moving.s[i]/2 + EPS) return Infinity;
   }
-  if (B.min[axis] >= A.max[axis] - EPS) return Infinity;
-  return Math.max(0, A.min[axis] - B.max[axis]);
+  const aMin = moving.p[axis] - moving.s[axis]/2, aMax = moving.p[axis] + moving.s[axis]/2;
+  const bMin = obstacle.p[axis] - obstacle.s[axis]/2, bMax = obstacle.p[axis] + obstacle.s[axis]/2;
+  if (direction[axis] > 0) {
+    if (bMax <= aMin + EPS) return Infinity;
+    return Math.max(0, bMin - aMax);
+  }
+  if (bMin >= aMax - EPS) return Infinity;
+  return Math.max(0, aMin - bMax);
 }
 export function blockers(piece, active) {
+  if(piece.pathBlockers){const ids=new Set(active.map(p=>p.id));return piece.pathBlockers.filter(b=>ids.has(b.id)).map(b=>({...b})).sort((a,b)=>a.distance-b.distance);}
   const result = [];
   for (const other of active) {
     if (other.id === piece.id) continue;
@@ -50,13 +57,15 @@ export function validateLevel(level) {
     if (ids.has(piece.id)) errors.push(`duplicate ${piece.id}`);
     ids.add(piece.id);
     if (piece.dir.filter(v => v !== 0).length !== 1 || !piece.dir.every(v => [-1, 0, 1].includes(v))) errors.push(`direction ${piece.id}`);
-    for (const b of piece.boxes) if (b.s.some(v => v <= 0) || [...b.p, ...b.s].some(v => !Number.isFinite(v))) errors.push(`bounds ${piece.id}`);
+    for (const b of piece.boxes||[]) if (b.s.some(v => v <= 0) || [...b.p, ...b.s].some(v => !Number.isFinite(v))) errors.push(`bounds ${piece.id}`);
+    if(piece.pathBlockers&&piece.pathBlockers.some(b=>!level.pieces.some(p=>p.id===b.id)||b.id===piece.id))errors.push(`invalid mesh path ${piece.id}`);
   }
-  for (let i = 0; i < level.pieces.length; i++) for (let j = i + 1; j < level.pieces.length; j++) {
+  if(!level.assetSHA256) for (let i = 0; i < level.pieces.length; i++) for (let j = i + 1; j < level.pieces.length; j++) {
     if (level.pieces[i].boxes.some(a => level.pieces[j].boxes.some(b => overlap(a, b)))) errors.push(`overlap ${level.pieces[i].id}/${level.pieces[j].id}`);
   }
   if (level.pieces.filter(p => p.core).length !== 1) errors.push('exactly one core required');
   if (!solve(level.pieces)) errors.push('unsolvable');
+  if(level.assetSHA256){const seen=new Set(),n=level.pieces.length;const visit=mask=>{if(seen.has(mask))return;seen.add(mask);const active=level.pieces.filter((_,i)=>!(mask&(1<<i)));if(!active.length)return;const free=available(active);if(!free.length)errors.push('reachable deadlock');if(free.some(p=>p.core)&&active.length!==1)errors.push('early core');for(const p of free)visit(mask|(1<<level.pieces.indexOf(p)));};visit(0);if(seen.size!==level.reachableStates)errors.push('native state mismatch');}
   return errors;
 }
 export class Puzzle {
