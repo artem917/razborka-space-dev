@@ -1,0 +1,49 @@
+/* Illustrated environment is scenery only; the canvas contains the real GLB. */
+body{background:#0a1720 url('./assets/workshop.webp') center top/cover fixed no-repeat}
+body:before{content:'';position:fixed;inset:0;background:linear-gradient(#091720dc,#0917209c 45%,#091720e8);pointer-events:none;z-index:-1}
+.workshop{background:linear-gradient(90deg,#091a23e8,#112b32de 50%,#091a23e8);border-inline:1px solid #81949130}
+.stage{background:linear-gradient(#0a182b15,#0715212b),url('./assets/workshop.webp') center 48%/cover no-repeat;border:2px solid #607477;border-radius:14px;box-shadow:inset 0 0 35px #03090c88,0 6px 20px #0005}
+.stage:before{background:radial-gradient(ellipse at 50% 48%,#0c2738b3 0,#10253675 35%,transparent 67%);opacity:1}
+.stage-top{top:8px;padding:7px 8px;background:#0a1b24df;border:1px solid #61797c80;border-radius:5px;color:#e6e4d5;letter-spacing:1px}
+.stage-bottom{left:0;right:0;bottom:0;background:linear-gradient(#29414a,#0e2129);padding:8px 12px;border-top:1px solid #678080;color:#9fbdc5}
+.module-cue{position:absolute;bottom:31px;left:50%;transform:translateX(-50%);width:max-content;max-width:95%;padding:5px 8px;background:#102c31e0;border:1px solid #79b9b7;border-radius:4px;color:#d5f2e7;font-size:10px;pointer-events:none;z-index:2}
+.tool,.counter,.icon{box-shadow:inset 0 1px #94bab329,0 3px 8px #0004;background:linear-gradient(#24424a,#102630)}
+.masthead{border-color:#7d929277}.eyebrow{text-shadow:0 2px 3px #08141d}.objective{color:#b7ced0}
+.overlay{background:linear-gradient(#09182855,#0a1825bb),url('./assets/workshop.webp') center/cover no-repeat;backdrop-filter:none}
+.overlay:before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent,#02111acc);pointer-events:none;z-index:-1}
+.splash{background:linear-gradient(#06142135,#0715229c),url('./assets/workshop.webp') center/cover no-repeat}
+.splash-card{align-self:stretch;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;width:min(100%,680px)}
+.brand-art{margin-bottom:25px;border-radius:10px;border:1px solid #647779;box-shadow:0 9px 25px #0008}
+.splash h2{text-shadow:0 3px 7px #000;font-size:clamp(25px,4vw,36px)}
+.splash .eyebrow,.splash #load-caption,.splash .text-button{background:#081b25c4;padding:7px 12px;border-radius:4px;color:#c7ddd9}
+.loading-track{background:#081923;border:1px solid #72858a;height:8px;margin-top:12px;box-shadow:0 2px 9px #0007}
+.loading-track span{background:linear-gradient(90deg,#dd8f3e,#ffc57b)}
+/* Characters are full alpha silhouettes, never cropped portraits/cards. */
+.dialogue-scene{display:flex;align-items:center;gap:13px;position:relative}
+.dialogue-scene img{object-fit:contain;object-position:center;border-radius:0;background:none;filter:drop-shadow(0 7px 7px #0008);flex-shrink:0}
+.speech-bubble{position:relative;background:linear-gradient(135deg,#fff0d7,#dcc6a3);border:2px solid #a98959;border-radius:17px;padding:13px 15px;color:#25343b;box-shadow:0 5px 14px #0004;min-width:0}
+.speech-bubble:before{content:'';position:absolute;left:-10px;top:45%;width:17px;height:17px;background:#f5e4c8;border-left:2px solid #a98959;border-bottom:2px solid #a98959;transform:rotate(45deg)}
+.speech-bubble p{position:relative;line-height:1.5;margin:0;font-size:13px}
+.speech-bubble .eyebrow{color:#715632;font-size:8px;letter-spacing:1px;text-shadow:none;margin-bottom:7px}
+.inspector{padding:0 0 3px;border:0;border-radius:0;background:none;gap:12px;margin-top:12px;min-height:115px;align-items:center}
+.inspector img{width:96px;height:105px}
+.inspector .speech-bubble{flex:1;padding:11px 12px;border-radius:13px}
+.inspector p:last-child{font-size:12px;line-height:1.45}
+.inspector .eyebrow{color:#7c5c35;font-size:8px}
+.briefing{display:block;width:min(100%,660px);padding:24px;position:relative;background:linear-gradient(#102a32ed,#10222ce8);border:1px solid #8b9c94;border-radius:16px;box-shadow:0 15px 45px #0008}
+.briefing>h2{font-size:clamp(28px,4vw,40px);margin-bottom:18px}
+.briefing-dialogue{gap:15px;align-items:center;min-height:200px}
+.briefing-dialogue img{width:39%;max-width:235px;height:auto}
+.briefing-dialogue .speech-bubble{flex:1;padding:16px}
+.briefing-dialogue .speech-bubble p{font-size:15px}
+.briefing-dialogue .speech-bubble .eyebrow{font-size:8px}
+.job-ticket{background:linear-gradient(110deg,#1d373e,#0e252e);border-color:#789598;box-shadow:inset 0 1px #d4e0ce20;margin:15px 0 20px}
+.panel{background:linear-gradient(#17343eed,#10252bed);border-color:#8c9b8f}
+.victory-card{max-width:520px}
+.victory-brakych{gap:14px;margin:16px 0 24px}
+.victory-brakych img{width:37%;height:auto;max-width:175px}
+.victory-brakych .speech-bubble{flex:1;padding:13px}
+.victory-brakych p{font-size:14px;line-height:1.5}
+@media(min-width:850px){.inspector{flex-direction:row;flex-wrap:wrap;justify-content:center;padding:0;margin-top:12px}.inspector img{width:160px;height:165px}.inspector .speech-bubble{flex:1 1 100%;margin:0 5px}.inspector .speech-bubble:before{top:-10px;left:45%;transform:rotate(135deg)}.inspector p:last-child{font-size:15px}.stage{max-height:660px}.briefing-dialogue .speech-bubble{max-width:350px}}
+@media(max-width:600px){.briefing{padding:21px}.briefing h2{font-size:29px;margin-bottom:10px}.briefing-dialogue{min-height:165px;gap:12px}.briefing-dialogue img{width:40%}.briefing-dialogue .speech-bubble{padding:12px 10px}.briefing-dialogue .speech-bubble p{font-size:12px;line-height:1.5}.briefing-dialogue .speech-bubble .eyebrow{font-size:7px}.job-ticket{margin:12px 0 16px}.inspector img{width:90px;height:97px}.inspector p:last-child{font-size:11px}.inspector .speech-bubble{padding:10px}.inspector .eyebrow{font-size:7px}.splash-card{justify-content:center}.victory-brakych p{font-size:13px}.stage{height:clamp(335px,50svh,470px)}}
+@media(max-width:340px){.briefing{padding:16px}.briefing h2{font-size:27px}.briefing-dialogue .speech-bubble p{font-size:11px}.briefing-dialogue img{width:38%}.briefing-dialogue{gap:10px;min-height:150px}.inspector img{width:75px;height:90px}.inspector .eyebrow{font-size:6px}.inspector p:last-child{font-size:11px}.module-cue{font-size:9px}.stage-top{font-size:8px}.victory-card{padding:20px}}
