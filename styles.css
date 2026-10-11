@@ -27,7 +27,7 @@ body:not([data-screen='play']) .workshop{visibility:hidden}.workshop{width:min(c
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 /* Screen composition: reserve room for the controls rather than scrolling them out of view. */
 body{display:flow-root}
-@media(min-width:901px){.workshop{margin-bottom:12px}.stage{height:clamp(480px,calc(100svh - 310px),760px)}.inspector .speech-bubble .eyebrow{font-size:9px;line-height:1.5}}
-@media(min-width:601px) and (max-width:900px){.workshop{padding-bottom:8px}.stage{height:clamp(410px,47svh,540px)}.job-heading{margin-bottom:16px}.inspector{margin-top:10px}}
+@media(min-width:901px){.workshop{margin-bottom:12px}.stage{height:clamp(480px,calc(100svh - 310px),760px)}.inspector .speech-bubble .eyebrow{font-size:9px;line-height:1.5}.briefing-dialogue .speech-bubble{padding-left:62px}}
+@media(min-width:601px) and (max-width:900px){.workshop{padding-bottom:8px}.stage{height:clamp(410px,47svh,540px)}.job-heading{margin-bottom:16px}.inspector{margin-top:10px}.inspector .speech-bubble,.briefing-dialogue .speech-bubble{padding-left:clamp(48px,10vw,78px);padding-right:48px}}
 @media(max-width:600px){.workshop{padding-bottom:4px}.stage{height:clamp(350px,46svh,440px)}.inspector{margin-top:9px}.briefing-dialogue .speech-bubble{padding-left:30px;padding-right:27px}}
 @media(max-width:340px){.stage{height:375px}.briefing-dialogue .speech-bubble{padding-left:26px;padding-right:24px}}
