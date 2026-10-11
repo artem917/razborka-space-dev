@@ -31,3 +31,21 @@ body{display:flow-root}
 @media(min-width:601px) and (max-width:900px){.workshop{padding-bottom:8px}.stage{height:clamp(410px,47svh,540px)}.job-heading{margin-bottom:16px}.inspector{margin-top:10px}.inspector .speech-bubble,.briefing-dialogue .speech-bubble{padding-left:clamp(48px,10vw,78px);padding-right:48px}}
 @media(max-width:600px){.workshop{padding-bottom:4px}.stage{height:clamp(350px,46svh,440px)}.inspector{margin-top:9px}.briefing-dialogue .speech-bubble{padding-left:30px;padding-right:27px}}
 @media(max-width:340px){.stage{height:375px}.briefing-dialogue .speech-bubble{padding-left:26px;padding-right:24px}}
+
+/* Keep all dialogue text at least a few pixels inside the actual irregular SVG cloud, excluding its tail. */
+@media(max-width:900px){
+ .inspector .speech-bubble{padding-left:clamp(45px,8vw,65px);padding-right:clamp(32px,5vw,48px);padding-top:33px;padding-bottom:43px;min-height:183px}
+}
+@media(min-width:601px){
+ .victory-brakych .speech-bubble{width:350px;min-height:182px;padding:37px 47px 39px 56px}
+}
+@media(max-width:600px){
+ .inspector .speech-bubble{min-height:150px;padding:22px 29px 33px 43px}
+ .briefing-dialogue .speech-bubble{padding-left:38px;padding-right:33px;padding-top:37px;padding-bottom:44px;min-height:220px}
+ .victory-brakych .speech-bubble{padding-left:34px;padding-right:29px;padding-top:31px;padding-bottom:35px;min-height:165px}
+}
+@media(max-width:340px){
+ .inspector .speech-bubble{min-height:161px;padding:24px 26px 35px 37px}
+ .briefing-dialogue .speech-bubble{padding-left:35px;padding-right:30px;padding-top:37px;padding-bottom:44px;min-height:240px}
+ .victory-brakych .speech-bubble{padding-left:31px;padding-right:26px;padding-top:30px;padding-bottom:37px;min-height:185px}
+}
