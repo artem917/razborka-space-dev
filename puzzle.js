@@ -65,11 +65,11 @@ export function validateLevel(level) {
   }
   if (level.pieces.filter(p => p.core).length !== 1) errors.push('exactly one core required');
   if (!solve(level.pieces)) errors.push('unsolvable');
-  if(level.assetSHA256){const seen=new Set(),n=level.pieces.length;const visit=mask=>{if(seen.has(mask))return;seen.add(mask);const active=level.pieces.filter((_,i)=>!(mask&(1<<i)));if(!active.length)return;const free=available(active);if(!free.length)errors.push('reachable deadlock');if(free.some(p=>p.core)&&active.length!==1)errors.push('early core');for(const p of free)visit(mask|(1<<level.pieces.indexOf(p)));};visit(0);if(seen.size!==level.reachableStates)errors.push('native state mismatch');}
+  if(level.assetSHA256){const seen=new Set();let exhausted=false;const visit=mask=>{if(seen.has(mask)||exhausted)return;if(seen.size>=200000){exhausted=true;errors.push('state budget exceeded; configuration rejected');return;}seen.add(mask);const active=level.pieces.filter((_,i)=>!(mask&(1n<<BigInt(i))));if(!active.length)return;const free=available(active);if(!free.length)errors.push('reachable deadlock');if(free.some(p=>p.core)&&active.length!==1)errors.push('early core');for(const p of free)visit(mask|(1n<<BigInt(level.pieces.indexOf(p))));};visit(0n);if(seen.size!==level.reachableStates)errors.push('native state mismatch');}
   return errors;
 }
 export class Puzzle {
-  constructor(level) { this.level = level; this.active = new Map(level.pieces.map(p => [p.id, p])); this.removed = []; this.busy = false; this.won = false; }
+  constructor(level) { this.level = level; this.active = new Map(level.pieces.map(p => [p.id, p])); this.removed = []; this.busy = false; this.won = false;this.pendingId=null; }
   inspect(id) {
     const piece = this.active.get(id);
     if (!piece) return { ok: false, reason: 'missing' };
@@ -79,14 +79,14 @@ export class Puzzle {
   begin(id) {
     if (this.busy || this.won) return { ok: false, reason: 'busy' };
     const check = this.inspect(id);
-    if (check.ok) this.busy = true;
+    if (check.ok) {this.busy = true;this.pendingId=id;}
     return check;
   }
   complete(id) {
-    if (!this.busy) return false;
+    if (!this.busy||id!==this.pendingId) return false;
     const piece = this.active.get(id);
     if (!piece) return false;
-    this.active.delete(id); this.removed.push(id); this.busy = false;
+    this.active.delete(id); this.removed.push(id); this.busy = false;this.pendingId=null;
     this.won = !!piece.core;
     return true;
   }
