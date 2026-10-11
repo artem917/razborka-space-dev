@@ -63,3 +63,48 @@ body{display:flow-root}
  .briefing-dialogue .speech-bubble{padding:32px 27px 32px 36px;min-height:228px}
  .victory-brakych .speech-bubble{padding:27px 25px 27px 34px;min-height:176px}
 }
+
+:root{--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+/* Budget the WHOLE portrait session from the visible viewport. Part removal,
+   dialogue changes and tutorial dismissal never alter the canvas row. */
+@media(max-width:900px) and (orientation:portrait){
+ .workshop{width:100%;height:100svh;height:100dvh;min-height:0;margin:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:64px 100px minmax(0,1fr) 84px 168px;gap:8px;padding:max(10px,var(--safe-top)) max(12px,env(safe-area-inset-right)) max(10px,var(--safe-bottom)) max(12px,env(safe-area-inset-left))}
+ .masthead{grid-column:1;grid-row:1;height:100%;min-height:0}
+ .job-heading{grid-column:1;grid-row:2;height:100%;min-height:0;margin:0;padding:10px 13px;gap:8px}
+ .stage{grid-column:1;grid-row:3;width:100%;height:100%;min-height:0;margin:0}
+ .work-controls{grid-column:1;grid-row:4;width:100%;height:100%;min-height:0;margin:0;align-content:center;gap:6px}
+ .inspector{grid-column:1;grid-row:5;width:100%;height:100%;min-height:0;margin:0;align-items:center;overflow:visible}
+ .inspector .speech-bubble{min-height:0;height:100%;justify-content:center}
+ .inspector img{max-height:100%;object-fit:contain}
+ #qa-panel{grid-row:6;grid-column:1}
+ .overlay{padding-top:max(18px,env(safe-area-inset-top));padding-bottom:max(18px,env(safe-area-inset-bottom))}
+}
+@media(max-width:600px) and (orientation:portrait){
+ .workshop{grid-template-rows:54px 90px minmax(0,1fr) 78px 144px;gap:7px}
+ .job-heading h1{font-size:20px;margin:0 0 5px}
+ .job-heading .eyebrow{margin-bottom:5px}
+ .inspector .speech-bubble{padding:24px 29px 24px 42px}
+ .inspector .speech-bubble p{font-size:12px}
+ .tutorial{left:6px;right:6px;bottom:10px;min-height:72px}
+ .tutorial strong{font-size:12px}.tutorial p{font-size:10px;line-height:1.4}
+ #canvas-host{inset:22px 8px 110px}
+ .feedback{bottom:94px}
+}
+@media(max-width:340px) and (orientation:portrait){
+ .workshop{padding-inline:10px;grid-template-rows:50px 96px minmax(0,1fr) 76px 152px;gap:6px}
+ .inspector .speech-bubble{padding:24px 25px 24px 36px}
+ .inspector .speech-bubble p{font-size:12px}
+ .tutorial strong{font-size:11px}
+}
+#qa-panel{position:fixed;z-index:8;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));width:min(320px,calc(100vw - 24px));padding:8px;background:#102b35f2;border:1px solid #829b8c;border-radius:6px;font-size:12px;box-shadow:0 4px 12px #0008}
+#qa-panel button{margin-top:8px;width:100%;font-size:12px}
+/* Browser chrome can leave far less height than the device's nominal screen.
+   Compact only redundant labels, never the dialogue font or gameplay state. */
+@media(max-width:600px) and (max-height:780px) and (orientation:portrait){
+ .workshop{grid-template-rows:50px 78px minmax(0,1fr) 70px 128px;gap:6px}
+ .job-heading{padding-block:8px}.job-heading .objective{display:none}
+ .control-guide strong{display:none}
+}
+@media(max-width:340px) and (max-height:780px) and (orientation:portrait){
+ .workshop{grid-template-rows:50px 82px minmax(0,1fr) 70px 144px}
+}

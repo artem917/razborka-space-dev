@@ -3,7 +3,7 @@ import { GLTFLoader } from './vendor/loaders/GLTFLoader.js';
 import { mergeGeometries } from './vendor/utils/BufferGeometryUtils.js';
 import {clampZoom} from './view-input.js';
 import {metalInk,pointAtUV} from './surface-marks.js';
-import {surfaceInk} from './surface-ink.js';
+import {surfaceInk,INK_SAMPLES} from './surface-ink.js';
 const V=a=>new THREE.Vector3(...a),AXES=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
 export class WorkshopScene {
  constructor(host){
@@ -141,30 +141,25 @@ export class WorkshopScene {
  }
  updateInkVisibility(){
   const stamp=[this.level?.id,this.root.rotation.x,this.root.rotation.y,this.camera.zoom,this.width,this.height].join(':');if(this.inkStamp===stamp)return;this.inkStamp=stamp;this.root.updateMatrixWorld(true);
-  for(const v of this.views.values()){if(!this.active.has(v.piece.id))continue;const box=(v.paintBox||v.box).clone();if(v.piece.id==='lid')box.max.y=Math.min(box.max.y,2.84);const corners=[];for(const x of[box.min.x,box.max.x])for(const y of[box.min.y,box.max.y])for(const z of[box.min.z,box.max.z])corners.push(this.project(new THREE.Vector3(x,y,z).sub(this.center).applyQuaternion(this.root.quaternion)));const x0=Math.min(...corners.map(p=>p.x)),x1=Math.max(...corners.map(p=>p.x)),y0=Math.min(...corners.map(p=>p.y)),y1=Math.max(...corners.map(p=>p.y)),candidates=[];
-   for(let i=0;i<v.marks.length;i++){const m=v.marks[i],n=m.normalLocal.clone().transformDirection(v.group.matrixWorld).transformDirection(this.camera.matrixWorldInverse),p=this.project(v.group.localToWorld(m.anchor.clone())),offset=Math.hypot((p.x-(x0+x1)/2)/Math.max(1,x1-x0),(p.y-(y0+y1)/2)/Math.max(1,y1-y0));if(n.z>=.12)candidates.push({i,score:n.z-2*offset});}candidates.sort((a,b)=>b.score-a.score);
-   let choice;for(const c of candidates){for(const scale of[1,.85,.70,.55]){const length=v.marks[c.i].length*scale;if(this.stencilFits(v,v.marks[c.i],length)){choice={i:c.i,length};break;}}if(choice)break;}
-   v.arrowMesh.visible=!!choice;if(!choice)continue;v.paintIndex=choice.i;v.paintLength=choice.length;const m=v.marks[choice.i],u=v.arrowMesh.material.uniforms;u.uAnchor.value.copy(m.anchor);u.uNormal.value.copy(m.normalLocal);u.uLength.value=choice.length;}
- }
- stencilFits(v,m,length){
-  const matrix=this.camera.matrixWorldInverse.clone().multiply(v.group.matrixWorld),a=m.anchor.clone().applyMatrix4(matrix),d=v.arrowMesh.material.uniforms.uVector.value.clone().transformDirection(matrix);if(Math.hypot(d.x,d.y)<.10)return false;
-  const along=new THREE.Vector2(d.x,d.y).normalize(),side=new THREE.Vector2(along.y,-along.x);
-  // Include stroke extrema, not just an ideal projector's endpoints. Test
-  // only this module's real carrier: no availability/blocker information.
-  const samples=[[.5,.125],[.5,.90],[.5,.35],[.5,.56],[.5,.70],[.39,.17],[.61,.17],[.39,.52],[.61,.52],[.18,.56],[.82,.56]];
-  for(const[u,w]of samples){const p=a.clone();p.x+=side.x*(u-.5)*length*.74+along.x*(w-.5)*length;p.y+=side.y*(u-.5)*length*.74+along.y*(w-.5)*length;const screen=this.project(p.applyMatrix4(this.camera.matrixWorld));this.pointer.set(screen.x/this.width*2-1,-screen.y/this.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);const hit=this.ray.intersectObject(v.arrowMesh,false)[0];if(!hit||Math.abs(hit.point.clone().applyMatrix4(this.camera.matrixWorldInverse).z-a.z)>length*2)return false;}
-  return true;
+  for(const v of this.views.values()){
+   if(!this.active.has(v.piece.id))continue;const index=[];
+   for(const m of v.marks){const projected=this.inkProjection(v,m),normal=m.normalLocal.clone().transformDirection(v.group.matrixWorld).transformDirection(this.camera.matrixWorldInverse);
+    // Suppress an edge-on/visually misleading copy. Its UVs and physical
+    // attachment NEVER move, rotate toward the camera, or encode availability.
+    m.enabled=projected.enabled&&normal.z>.06;if(m.enabled)for(let i=m.start;i<m.start+m.count;i++)index.push(i);
+   }
+   const geometry=v.arrowMesh.geometry,attribute=geometry.index;attribute.array.fill(0);attribute.array.set(index);attribute.needsUpdate=true;geometry.setDrawRange(0,index.length);v.arrowMesh.visible=!!index.length;
+  }
  }
  paintedArrowAudit(){
-  this.updateInkVisibility();const hosts=this.pickMeshes.filter(m=>this.active.has(m.userData.piece)&&!m.userData.decal_surface),inkUV=[[.5,.18],[.5,.35],[.5,.56],[.5,.7],[.5,.855],[.43,.22],[.57,.22],[.43,.53],[.57,.53],[.25,.58],[.75,.58]];
-  return [...this.views.values()].filter(v=>this.active.has(v.piece.id)).map(v=>{const m=v.marks[v.paintIndex],length=v.paintLength||m.length,matrix=this.camera.matrixWorldInverse.clone().multiply(v.group.matrixWorld),a=m.anchor.clone().applyMatrix4(matrix),d=v.arrowMesh.material.uniforms.uVector.value.clone().transformDirection(matrix),along=new THREE.Vector2(d.x,d.y).normalize(),side=new THREE.Vector2(along.y,-along.x),pos=v.arrowMesh.geometry.attributes.position,positions=[],uv=[];
-   for(let i=0;i<pos.count;i++){const p=new THREE.Vector3().fromBufferAttribute(pos,i).applyMatrix4(matrix),delta=new THREE.Vector2(p.x-a.x,p.y-a.y);positions.push(p.x,p.y,p.z);uv.push(.5+delta.dot(side)/(length*.74),.5+delta.dot(along)/length);}
-   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(new Float64Array(positions),3));geometry.setAttribute('uv',new THREE.BufferAttribute(new Float64Array(uv),2));
-   const actual=inkUV.map(([u,w])=>pointAtUV(geometry,u,w,new THREE.Vector3(0,0,1))?.applyMatrix4(this.camera.matrixWorld));geometry.dispose();const points=actual.map(p=>p?this.project(p):null),origin=v.group.localToWorld(m.anchor.clone()),start=this.project(origin),end=this.project(origin.clone().addScaledVector(V(v.piece.dir).applyQuaternion(this.root.quaternion),length)),expected=new THREE.Vector2(end.x-start.x,end.y-start.y),normal=m.normalLocal.clone().transformDirection(matrix),enabled=v.arrowMesh.visible&&d.clone().setZ(0).length()>=.10&&normal.z>=.12,cos=(p,q)=>p&&q?new THREE.Vector2(q.x-p.x,q.y-p.y).normalize().dot(expected.clone().normalize()):0;
-   let visibleSamples=0;for(let i=0;i<5;i++){const p=points[i];if(!p||!enabled)continue;this.pointer.set(p.x/this.width*2-1,-p.y/this.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);const hit=this.ray.intersectObjects(hosts,false)[0];if(hit&&hit.object.userData.piece===v.piece.id&&hit.point.distanceTo(actual[i])<3e-5)visibleSamples++;}
-   return{id:v.piece.id,dir:v.piece.dir,mode:'view-correct ink on original host triangles',copies:[{enabled,screenAlignment:cos(points[0],points[4]),segmentAlignment:points.slice(0,4).map((p,i)=>cos(p,points[i+1])),extractionPixels:expected.length(),visibleSamples,stencilSamples:11,paintOnHost:true,points:points.slice(0,5),completeGlyph:points.every(Boolean),carrierTriangles:pos.count/3}]};});
+  this.updateInkVisibility();this.root.updateMatrixWorld(true);const hosts=this.pickMeshes.filter(m=>this.active.has(m.userData.piece)&&!m.userData.decal_surface);
+  return [...this.views.values()].filter(v=>this.active.has(v.piece.id)).map(v=>({id:v.piece.id,dir:v.piece.dir,mode:'fixed object-space paint on suitable host faces',copies:v.marks.map(m=>{
+   const projection=this.inkProjection(v,m),actual=m.inkPoints.map(p=>v.group.localToWorld(p.clone()));let visibleSamples=0,maxSurfaceGap=0;
+   for(let i=0;i<5;i++){const p=projection.points[i];if(!m.enabled||p.x<0||p.y<0||p.x>this.width||p.y>this.height)continue;this.pointer.set(p.x/this.width*2-1,-p.y/this.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);const hit=this.ray.intersectObjects(hosts,false)[0];if(hit&&hit.object.userData.piece===v.piece.id&&hit.point.distanceTo(actual[i])<3e-5){visibleSamples++;maxSurfaceGap=Math.max(maxSurfaceGap,hit.point.distanceTo(actual[i]));}}
+   return{enabled:m.enabled,normal:m.normal,normalDotVector:m.normalDot,normalLimit:m.normalLimit,compound:m.compound,uvFixed:m.uvFixed,physicalAlignment:m.physicalAlignment,screenAlignment:projection.alignment,segmentAlignment:projection.segments,extractionPixels:projection.pixels,visibleSamples,stencilSamples:INK_SAMPLES.length,paintOnHost:true,points:projection.points.slice(0,5),completeGlyph:m.inkPoints.length===INK_SAMPLES.length,maxSurfaceGap,carrierTriangles:m.count/3};
+  })}));
  }
- arrowAudit(){this.root.updateMatrixWorld(true);return [...this.views.values()].map(v=>({id:v.piece.id,dir:v.piece.dir,copies:v.marks.length,depthTest:v.arrowMesh.material.depthTest,style:'navy-cream-metal-ink',surface:true,spatialLift:0,lengths:v.marks.map(m=>m.length),maxSurfaceGap:Math.max(...v.marks.map(m=>m.surfaceGap)),alignment:v.marks.map(m=>{const actual=v.group.localToWorld(m.tip.clone()).sub(v.group.localToWorld(m.tail.clone())).normalize(),expected=V(v.piece.dir).applyQuaternion(this.root.quaternion).normalize();return actual.dot(expected);})}));}
+ arrowAudit(){this.root.updateMatrixWorld(true);return [...this.views.values()].map(v=>({id:v.piece.id,dir:v.piece.dir,copies:v.marks.length,uvSignature:v.arrowMesh.geometry.attributes.uv.array.reduce((sum,x,i)=>sum+x*(i+1),0),fixedInk:!v.arrowMesh.material.isShaderMaterial,depthTest:v.arrowMesh.material.depthTest,style:'navy-cream-metal-ink',surface:true,spatialLift:0,lengths:v.marks.map(m=>m.length),maxSurfaceGap:Math.max(...v.marks.map(m=>m.surfaceGap)),suitableFaces:v.marks.map(m=>({normal:m.normal,normalDot:m.normalDot,normalLimit:m.normalLimit,compound:m.compound,uvFixed:m.uvFixed,ownSamples:m.ownSamples})),alignment:v.marks.map(m=>{const actual=v.group.localToWorld(m.tip.clone()).sub(v.group.localToWorld(m.tail.clone())).normalize(),expected=V(v.piece.dir).applyQuaternion(this.root.quaternion).normalize();return actual.dot(expected);})}));}
  metrics(){const quant=(v,q)=>{const s=[...v].sort((a,b)=>a-b);return s[Math.floor(s.length*q)]||0;};return{samples:this.frameTimes.length,medianMs:quant(this.frameTimes,.5),p95Ms:quant(this.frameTimes,.95),longFrames:this.frameTimes.filter(t=>t>50).length,cpuRenderP95Ms:quant(this.renderTimes,.95),drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,geometries:this.renderer.info.memory.geometries,textures:this.renderer.info.memory.textures,pixelRatio:this.renderer.getPixelRatio()};}
  geometryAudit(){return{assetSHA256:this.assetSHA256,parts:this.level?.pieces.length,optimization:this.optimization,physics:this.qaProof};}
  appearanceAudit(){return [...this.views.values()].filter(v=>this.active.has(v.piece.id)).map(v=>({id:v.piece.id,ink:{color:v.arrowMesh.material.color.toArray(),opacity:v.arrowMesh.material.opacity,textureUUID:v.arrowMesh.material.map.uuid,style:'navy-cream-metal-ink'},materials:v.materials.map(m=>({color:m.material.color.toArray(),emissive:m.material.emissive?.toArray(),intensity:m.material.emissiveIntensity,opacity:m.material.opacity})),tutorialFocus:this.tutorialFocus,flash:performance.now()<this.flashUntil&&this.flashIds?.has(v.piece.id)}));}

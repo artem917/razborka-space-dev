@@ -9,7 +9,7 @@ let saved;try{saved=JSON.parse(storage.get(KEY)||'{}');}catch{saved={};}
 if(!saved||typeof saved!=='object'||Array.isArray(saved))saved={};
 let progress={...saved,tutorialSeen:!!saved.tutorialSeen||storage.get(OLD_TUTORIAL)==='seen',firstJobComplete:!!saved.firstJobComplete,obstructionLessonSeen:!!saved.obstructionLessonSeen,completedTemplates:Array.isArray(saved.completedTemplates)?saved.completedTemplates:[]};
 let view,library,level,puzzle,ready=false,mode='splash',generation=0,lesson=null,rotDistance=0,started=0,blockedTaps=0,rotations=0,soundOn=storage.get(SOUND)!=='off',audio,feedbackTimer,orderIndex=0;
-const query=new URLSearchParams(location.search),qa=query.get('qa')==='1',gesture=new ViewGesture(),events=[];let pointerPiece=null;
+const query=new URLSearchParams(location.search),qa=query.get('qa')==='1',gesture=new ViewGesture(),events=[],LESSON_VERSION=3;let pointerPiece=null,forceLesson=qa&&query.get('tutorial')==='1';
 const save=()=>storage.set(KEY,JSON.stringify(progress));
 const record=(type,data={})=>{events.push({type,time:Math.round(performance.now()),...data});if(events.length>1000)events.shift();};
 function changeScreen(next){mode=next;document.body.dataset.screen=next;for(const id of ['splash','intro','win','preview','fatal'])$(id).hidden=id!==({splash:'splash',intro:'intro',victory:'win',preview:'preview',fatal:'fatal'}[next]);record('screen',{screen:next});}
@@ -24,8 +24,8 @@ function update(){
  if(!shell&&puzzle.active.size===1)$('brakych-line').textContent='Осталось ядро. Нажми на него — пусть остывает отдельно.';
 }
 function endTutorial(skipped=false){
- if(!lesson)return;lesson=null;progress.tutorialSeen=true;progress.obstructionLessonSeen=true;save();storage.set(OLD_TUTORIAL,'seen');
- $('tutorial').hidden=true;$('guide-hand').hidden=true;delete $('stage').dataset.onboarding;view.setTutorialFocus(null);record('tutorial-complete',{skipped,version:2});
+ if(!lesson)return;lesson=null;progress.tutorialSeen=true;progress.obstructionLessonSeen=true;progress.obstructionLessonVersion=LESSON_VERSION;save();storage.set(OLD_TUTORIAL,'seen');
+ $('tutorial').hidden=true;$('guide-hand').hidden=true;delete $('stage').dataset.onboarding;view.setTutorialFocus(null);record('tutorial-complete',{skipped,version:LESSON_VERSION});
 }
 function guide(){
  if(!lesson)return;const step=lesson.step;if(step==='done'){endTutorial();return;}
@@ -55,7 +55,7 @@ function rotate(dx,dy){view.rotate(dx,dy);rotDistance+=Math.hypot(dx,dy);rotatio
 function startJob(){
  if(!ready)return;generation++;gesture.reset();pointerPiece=null;puzzle=new Puzzle(level);view.reset();started=performance.now();blockedTaps=0;rotations=0;rotDistance=0;
  changeScreen('play');clearTimeout(feedbackTimer);$('feedback').classList.remove('show');$('brakych-line').textContent='Сними оболочку. Под ней — механизм. Под механизмом — неприятности.';update();record('load',{level:level.id,parts:level.pieces.length,assetSHA256:view.assetSHA256});
- if(level.tutorial&&!progress.obstructionLessonSeen){lesson=new ObstructionLesson(level.tutorial);guide();}else{lesson=null;$('tutorial').hidden=true;$('guide-hand').hidden=true;delete $('stage').dataset.onboarding;view.setTutorialFocus(null);}
+ if(level.tutorial&&(forceLesson||!progress.obstructionLessonSeen||Number(progress.obstructionLessonVersion||0)<LESSON_VERSION)){forceLesson=false;lesson=new ObstructionLesson(level.tutorial);guide();}else{lesson=null;$('tutorial').hidden=true;$('guide-hand').hidden=true;delete $('stage').dataset.onboarding;view.setTutorialFocus(null);}
 }
 function attempt(id){
  if(mode!=='play'||!id||puzzle.busy||puzzle.won)return;
@@ -78,6 +78,7 @@ async function loadOrder(index,{keepSplash=false}={}){
  ready=true;$('counter').textContent='0/'+level.pieces.length;$('start-job').disabled=false;$('start-job').textContent='Принять заказ →';$('load-caption').textContent='';zoomControls();$('qa-status').textContent=JSON.stringify(view.geometryAudit(),null,2);record('asset-ready',view.geometryAudit());
 }
 $('skip-splash').onclick=intro;$('start-job').onclick=startJob;$('restart').onclick=startJob;$('win-restart').onclick=startJob;
+$('qa-replay-tutorial').onclick=async()=>{if(!qa||!ready)return;forceLesson=true;try{if(orderIndex!==0)await loadOrder(0);startJob();record('qa-tutorial-replay',{savePreserved:true});}catch(e){fatal(e);}};
 $('next-order').onclick=()=>loadOrder(orderIndex+1<library.length?orderIndex+1:0).catch(fatal);
 $('preview-back').onclick=intro;$('skip-tutorial').onclick=()=>endTutorial(true);$('retry').onclick=()=>location.reload();
 $('hint').onclick=()=>{if(mode==='play')feedback('Тяни — вращай. Нажимай на деталь по стрелке. Два пальца — масштаб.');};
@@ -92,6 +93,7 @@ function fatal(e){console.error(e);$('fatal-message').textContent=e.message;chan
 async function boot(){try{
  library=libraryFromCertificate(await(await fetch(new URL('./assets/puzzle-library.json',import.meta.url))).json());for(const l of library){const errors=validateLevel(l);if(errors.length)throw Error(errors.join(', '));}
  view=new WorkshopScene($('canvas-host'));$('qa-panel').hidden=!qa||query.get('review')==='1';const canvas=view.renderer.domElement;
+ new ResizeObserver(()=>requestAnimationFrame(positionHand)).observe($('canvas-host'));
  canvas.addEventListener('pointerdown',e=>{if(mode!=='play'||!ready)return;e.preventDefault();const action=gesture.down(e.pointerId,e.clientX,e.clientY,performance.now(),view.manualZoom);canvas.setPointerCapture(e.pointerId);if(action.type==='single-start'){pointerPiece=view.pick(e.clientX,e.clientY);view.select(pointerPiece);}else{pointerPiece=null;view.select(null);record(action.type);}});
  canvas.addEventListener('pointermove',e=>{if(mode!=='play')return;if(e.pointerType==='mouse'&&!e.buttons)view.select(view.pick(e.clientX,e.clientY));const action=gesture.move(e.pointerId,e.clientX,e.clientY);if(action?.type==='pinch'){manualZoom(action.zoom,'pinch');return;}const delta=action?.delta;if(delta&&(delta[0]||delta[1])){view.select(null);rotate(...delta);}});
  canvas.addEventListener('pointerup',e=>{if(mode!=='play')return;const result=gesture.up(e.pointerId,e.clientX,e.clientY,performance.now());if(result.tap){const id=view.pick(e.clientX,e.clientY);if(id&&id===pointerPiece)attempt(id);}if(result.pinchEnd)record('pinch-end');pointerPiece=null;view.select(null);if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);});
