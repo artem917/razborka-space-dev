@@ -2,6 +2,19 @@ import * as THREE from 'three';
 import {DecalGeometry} from './vendor/geometries/DecalGeometry.js';
 import {mergeGeometries} from './vendor/utils/BufferGeometryUtils.js';
 const axes=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]],V=a=>new THREE.Vector3(...a);
+// Interpolate on actual clipped HOST triangles using the stencil UVs.
+// Projector endpoints alone cannot prove the direction of curved painted ink.
+export function pointAtUV(geometry,u,v,normal){
+ const uv=geometry.attributes.uv,pos=geometry.attributes.position;
+ let nearest=null,distance=-Infinity;
+ for(let i=0;i+2<uv.count;i+=3){
+  const ax=uv.getX(i),ay=uv.getY(i),bx=uv.getX(i+1),by=uv.getY(i+1),cx=uv.getX(i+2),cy=uv.getY(i+2),det=(by-cy)*(ax-cx)+(cx-bx)*(ay-cy);if(Math.abs(det)<1e-12)continue;
+  const a=((by-cy)*(u-cx)+(cx-bx)*(v-cy))/det,b=((cy-ay)*(u-cx)+(ax-cx)*(v-cy))/det,c=1-a-b;
+  if(Math.min(a,b,c)<-1e-6)continue;
+  const point=new THREE.Vector3().fromBufferAttribute(pos,i).multiplyScalar(a).addScaledVector(new THREE.Vector3().fromBufferAttribute(pos,i+1),b).addScaledVector(new THREE.Vector3().fromBufferAttribute(pos,i+2),c);
+  if(!normal)return point;if(point.dot(normal)>distance){distance=point.dot(normal);nearest=point;}
+ }return nearest;
+}
 // One immutable stencil palette. Availability is deliberately NOT an input.
 export function metalInk(){
  const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const c=canvas.getContext('2d');
@@ -14,18 +27,21 @@ export function metalInk(){
 }
 export function surfaceMarks(view,ray,material){
  const d=V(view.piece.dir),box=view.box,center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3()),shell=view.piece.stage==='shell';
- const baseLength=view.piece.id==='lid'?.18:view.piece.id==='base'?.16:view.piece.core?.16:shell?.34:.22;
- const inverse=view.group.matrixWorld.clone().invert(),geometries=[],marks=[],hosts=view.meshes.filter(m=>!m.userData.decal_surface);
+ const baseLength=view.piece.id==='lid'?.24:view.piece.id==='base'?.18:view.piece.core?.18:shell?.34:.22;
+ const inverse=view.group.matrixWorld.clone().invert(),geometries=[],marks=[],hosts=view.meshes.filter(m=>!m.userData.decal_surface&&(!view.piece.core||m.material.name==='04_Graphite_gunmetal'));
  // Painted-panel anchors avoid energy glass, fasteners and the tall antenna.
  if(view.piece.id==='lid')center.set(0,2.64,0);
- if(view.piece.id==='upper'){center.y=2.09;center.x=-.23;}
+ if(view.piece.id==='upper'){center.y=2.09;center.x=.24;}
  if(view.piece.id==='front'){center.y=1.48;center.x=.36;}
- if(view.piece.id==='base')center.y=.21;
+ if(view.piece.id==='base'){center.y=.17;center.x=.53;}
  if(view.piece.id==='left'){center.x=-.72;center.y=1.45;center.z=0;}
  if(view.piece.id==='right'){center.x=.86;center.y=1.45;center.z=0;}
+ // Rear exits along -Z. Near its side seam, the hull tangent agrees with that
+ // axis; the old top-down projector instead bent the glyph down the shoulder.
+ if(view.piece.id==='rear'){center.z=-.56;center.y=1.55;}
  for(const axis of axes){const n=V(axis);if(Math.abs(n.dot(d))>.01)continue;const side=d.clone().cross(n).normalize(),orientation=new THREE.Euler().setFromRotationMatrix(new THREE.Matrix4().makeBasis(side,d,n));let chosen;
-  for(const scale of [1,.78,.62]){if(chosen)break;const length=baseLength*scale;
-   for(const[along,across]of[[0,0],[-.20,0],[.20,0],[0,-.20],[0,.20]]){
+  for(const scale of (view.piece.core?[1,.78,.62,.45,.3,.2]:[1,.78,.62,.45])){if(chosen)break;const length=baseLength*scale;
+   for(const[along,across]of[[0,0],[-.08,0],[.08,0],[-.20,0],[.20,0],[0,-.20],[0,.20],[-.35,-.20],[-.35,.20],[.35,-.20],[.35,.20]]){
     const sample=center.clone().addScaledVector(d,along*Math.min(size.length(),1)).addScaledVector(side,across*Math.min(size.length(),1));ray.set(sample.clone().addScaledVector(n,5),n.clone().negate());
     const hit=ray.intersectObjects(hosts,false).find(h=>h.face&&h.face.normal.clone().applyNormalMatrix(new THREE.Matrix3().getNormalMatrix(h.object.matrixWorld)).dot(n)>.45);if(!hit)continue;
     const projection=new DecalGeometry(hit.object,hit.point,orientation,new THREE.Vector3(length*.74,length,shell?.55:.075));
@@ -36,6 +52,9 @@ export function surfaceMarks(view,ray,material){
     projection.dispose();const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));const uv=geometry.attributes.uv;
     if(!uv?.count){geometry.dispose();continue;}let u0=1,u1=0,v0=1,v1=0;for(let i=0;i<uv.count;i++){u0=Math.min(u0,uv.getX(i));u1=Math.max(u1,uv.getX(i));v0=Math.min(v0,uv.getY(i));v1=Math.max(v1,uv.getY(i));}
     if(u0>.16||u1<.84||v0>.14||v1<.86){geometry.dispose();continue;}
+    const inkUV=[[.5,.18],[.5,.35],[.5,.56],[.5,.7],[.5,.855],[.43,.22],[.57,.22],[.43,.53],[.57,.53],[.25,.58],[.75,.58]];
+    const inkPoints=inkUV.map(([u,v])=>pointAtUV(geometry,u,v,n));
+    if(inkPoints.some(p=>!p)){geometry.dispose();continue;}
     // DecalGeometry clips the HOST triangles. No normal-space spatial lift.
     // Check triangle centres against the real parent surface, not its AABB.
     const p=geometry.attributes.position;let maxSurfaceGap=0,samples=0;for(let i=0;i+2<p.count;i+=Math.max(3,Math.floor(p.count/45/3)*3)){
@@ -43,12 +62,14 @@ export function surfaceMarks(view,ray,material){
     }
     if(!samples||maxSurfaceGap>2e-5){geometry.dispose();continue;}
     const tip=hit.point.clone().addScaledVector(d,length*.36),tail=hit.point.clone().addScaledVector(d,-length*.36);
-    chosen={geometry,mark:{normal:axis,anchor:hit.point.clone().applyMatrix4(inverse),tip:tip.applyMatrix4(inverse),tail:tail.applyMatrix4(inverse),length,sourceMesh:hit.object.uuid,surfaceGap:maxSurfaceGap,surfaceSamples:samples,vectorBasis:[...view.piece.dir],uvCoverage:[u0,u1,v0,v1]}};break;
+    chosen={geometry,mark:{normal:axis,anchor:hit.point.clone().applyMatrix4(inverse),tip:tip.applyMatrix4(inverse),tail:tail.applyMatrix4(inverse),inkPoints:inkPoints.map(p=>p.applyMatrix4(inverse)),length,sourceMesh:hit.object.uuid,surfaceGap:maxSurfaceGap,surfaceSamples:samples,vectorBasis:[...view.piece.dir],uvCoverage:[u0,u1,v0,v1]}};break;
    }
   }
   if(chosen){chosen.geometry.applyMatrix4(inverse);geometries.push(chosen.geometry);marks.push(chosen.mark);}
  }
  if(!marks.length)throw Error('Не найдено читаемой поверхности для маркировки '+view.piece.id);
- const mesh=new THREE.Mesh(mergeGeometries(geometries,false),material);for(const g of geometries)g.dispose();mesh.userData.piece=view.piece.id;mesh.userData.decal_surface=true;mesh.userData.marking=true;
+ let start=0;for(let i=0;i<geometries.length;i++){marks[i].start=start;marks[i].count=geometries[i].attributes.position.count;start+=marks[i].count;}
+ const merged=mergeGeometries(geometries,false);merged.setIndex(new THREE.BufferAttribute(new Uint32Array(start),1));
+ const mesh=new THREE.Mesh(merged,material);for(const g of geometries)g.dispose();mesh.userData.piece=view.piece.id;mesh.userData.decal_surface=true;mesh.userData.marking=true;
  view.group.add(mesh);view.marks=marks;view.arrowMesh=mesh;return mesh;
 }

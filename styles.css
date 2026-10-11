@@ -32,20 +32,34 @@ body{display:flow-root}
 @media(max-width:600px){.workshop{padding-bottom:4px}.stage{height:clamp(350px,46svh,440px)}.inspector{margin-top:9px}.briefing-dialogue .speech-bubble{padding-left:30px;padding-right:27px}}
 @media(max-width:340px){.stage{height:375px}.briefing-dialogue .speech-bubble{padding-left:26px;padding-right:24px}}
 
-/* Keep all dialogue text at least a few pixels inside the actual irregular SVG cloud, excluding its tail. */
-@media(max-width:900px){
- .inspector .speech-bubble{padding-left:clamp(45px,8vw,65px);padding-right:clamp(32px,5vw,48px);padding-top:33px;padding-bottom:43px;min-height:183px}
-}
-@media(min-width:601px){
- .victory-brakych .speech-bubble{width:350px;min-height:182px;padding:37px 47px 39px 56px}
-}
+/* Optical safe area: the speech tail never participates in text alignment. */
+.speech-bubble p{line-height:1.5;text-align:left;transform:none}
+.speech-bubble .eyebrow{line-height:1.4;margin-bottom:8px}
+.dialogue-scene img{filter:drop-shadow(1px 0 0 #efc58d90) drop-shadow(-1px 0 0 #b4eddf90) drop-shadow(0 0 10px #06151e) drop-shadow(0 8px 5px #000c)}
+.inspector .speech-bubble{padding:36px 38px 51px;min-height:207px}
+.briefing-dialogue .speech-bubble{padding:44px 58px 44px 86px;min-height:232px}
+.victory-brakych .speech-bubble{padding:32px 39px 32px 52px;min-height:178px}
+/* Move the fixed canvas up without resizing or refitting its projection. */
+#canvas-host{inset:34px 16px 80px}
+.guide-hand{width:42px;height:48px;transform-origin:42.96875% 8.333333%;filter:drop-shadow(0 2px 2px #07121c) drop-shadow(0 0 3px #06151e)}
+.guide-hand.drag{width:32px;height:35px;animation:hand-orbit 2.2s ease-in-out infinite}
+.guide-hand.tap{animation:hand-press 1.4s ease-in-out infinite}
+.guide-hand.tap:after{content:'';position:absolute;left:42.96875%;top:8.333333%;width:16px;height:16px;border:2px solid #f8e6c6;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 2px #122f37;animation:tap-contact 1.4s ease-in-out infinite}
+.guide-hand.drag:before{content:'';position:absolute;left:calc(42.96875% - 60px);top:2px;width:120px;height:14px;border:2px dashed #efdfbcb3;border-top:0;border-radius:0 0 50% 50%;animation:orbit-track 2.2s ease-in-out infinite}
+@keyframes hand-orbit{0%,100%{transform:translateX(-54px)}50%{transform:translateX(54px)}}
+@keyframes orbit-track{0%,100%{transform:translateX(54px)}50%{transform:translateX(-54px)}}
+@keyframes hand-press{0%,25%,100%{transform:scale(1)}45%,60%{transform:scale(.9)}}
+@keyframes tap-contact{0%,25%,100%{opacity:.3;scale:1.2}45%,60%{opacity:1;scale:.8}}
+@media(min-width:1700px){.inspector .speech-bubble{padding:37px 42px 52px;min-height:214px}}
+@media(min-width:601px) and (max-width:900px){.inspector .speech-bubble{padding:34px 55px 34px 76px;min-height:168px}.briefing-dialogue .speech-bubble{padding:35px 45px 35px 60px}.victory-brakych .speech-bubble{width:350px;padding:32px 44px 32px 56px}}
 @media(max-width:600px){
- .inspector .speech-bubble{min-height:150px;padding:22px 29px 33px 43px}
- .briefing-dialogue .speech-bubble{padding-left:38px;padding-right:33px;padding-top:37px;padding-bottom:44px;min-height:220px}
- .victory-brakych .speech-bubble{padding-left:34px;padding-right:29px;padding-top:31px;padding-bottom:35px;min-height:165px}
+ #canvas-host{inset:18px 8px 92px}
+ .inspector .speech-bubble{min-height:144px;padding:25px 31px 25px 43px}
+ .briefing-dialogue .speech-bubble{padding:32px 30px 32px 40px;min-height:210px}
+ .victory-brakych .speech-bubble{padding:27px 27px 27px 37px;min-height:160px}
 }
 @media(max-width:340px){
- .inspector .speech-bubble{min-height:161px;padding:24px 26px 35px 37px}
- .briefing-dialogue .speech-bubble{padding-left:35px;padding-right:30px;padding-top:37px;padding-bottom:44px;min-height:240px}
- .victory-brakych .speech-bubble{padding-left:31px;padding-right:26px;padding-top:30px;padding-bottom:37px;min-height:185px}
+ .inspector .speech-bubble{padding:24px 25px 24px 36px;min-height:146px}
+ .briefing-dialogue .speech-bubble{padding:32px 27px 32px 36px;min-height:228px}
+ .victory-brakych .speech-bubble{padding:27px 25px 27px 34px;min-height:176px}
 }

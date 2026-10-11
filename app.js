@@ -21,6 +21,7 @@ function update(){
  const shell=[...puzzle.active.values()].filter(p=>p.stage==='shell').length;
  $('stage-status').textContent=puzzle.won?'ЯДРО СПАСЕНО':puzzle.active.size===1?'ТЕРМОЯДРО':shell?'ОБОЛОЧКА':'ВНУТРЕННИЙ МЕХАНИЗМ';
  if(!shell&&puzzle.active.size>1)$('brakych-line').textContent='Вот теперь интересно. Ядро держат эти блоки. Разбирай по стрелкам.';
+ if(!shell&&puzzle.active.size===1)$('brakych-line').textContent='Осталось ядро. Нажми на него — пусть остывает отдельно.';
 }
 function endTutorial(skipped=false){
  if(!lesson)return;lesson=null;progress.tutorialSeen=true;progress.obstructionLessonSeen=true;save();storage.set(OLD_TUTORIAL,'seen');
@@ -29,13 +30,26 @@ function endTutorial(skipped=false){
 function guide(){
  if(!lesson)return;const step=lesson.step;if(step==='done'){endTutorial();return;}
  $('stage').dataset.onboarding=step;$('tutorial').hidden=false;$('guide-hand').className='guide-hand '+(step==='rotate'?'drag':'tap');
- const text={rotate:['01 / 04 · ОСМОТРИ','Потяни чайник пальцем','Поверни его. Стрелки нарисованы прямо на металле.'],attempt:['02 / 04 · ПРОВЕРЬ','Нажми на верхнюю панель','Попробуй снять панель под красной крышкой.'],blocker:['03 / 04 · УПОР','Мешает красная крышка','Сними крышку. Это настоящее препятствие на пути панели.'],retry:['04 / 04 · ПОВТОРИ','Снова нажми на панель','Крышка снята. Проверь тот же путь ещё раз.']}[step];
+ const text={rotate:['01 / 04 · ОСМОТРИ','Потяни — поверни чайник','Веди пальцем по стенду. Это вращение, не снятие.'],attempt:['02 / 04 · ПРОВЕРЬ','Нажми на верхнюю панель','Коснись панели под крышкой. Не тяни её пальцем.'],blocker:['03 / 04 · УПОР','Панели мешает крышка','Теперь нажми на красную крышку — сними препятствие.'],retry:['04 / 04 · ПОВТОРИ','Снова нажми на панель','Крышка снята. Панель выйдет вверх по своей стрелке.']}[step];
  [$('guide-step').textContent,$('guide-title').textContent,$('guide-text').textContent]=text;
  view.setTutorialFocus(step==='rotate'?null:lesson.target());positionHand();record('tutorial-step',{step,target:lesson.target()});
 }
 function positionHand(){
- if(!lesson)return;const rotate=lesson.step==='rotate',point=rotate?null:view.marker(lesson.target()),host=$('canvas-host');
- $('guide-hand').hidden=!rotate&&!point;$('guide-hand').style.left=(host.offsetLeft+(point?point.x-15:view.width*.48))+'px';$('guide-hand').style.top=(host.offsetTop+(point?point.y-2:view.height*.42))+'px';
+ if(!lesson)return;const rotate=lesson.step==='rotate',host=$('canvas-host'),hand=$('guide-hand');
+ const point=rotate?view.rotationGesturePoint():view.tapTarget(lesson.target());
+ hand.hidden=!point;if(!point)return;
+ if(rotate){const room=$('tutorial').offsetTop-host.offsetTop-point.y-4,height=Math.min(35,room/(1-6/72));if(height<20){hand.hidden=true;return;}hand.style.height=height+'px';hand.style.width=(height*64/72)+'px';}else{hand.style.height='';hand.style.width='';}
+ // The SVG fingertip is (27.5,6), not the centre of its bounding rectangle.
+ const tipX=hand.offsetWidth*27.5/64,tipY=hand.offsetHeight*6/72;
+ hand.style.left=(host.offsetLeft+point.x-tipX)+'px';hand.style.top=(host.offsetTop+point.y-tipY)+'px';
+ hand.dataset.target=rotate?'rotate':lesson.target();
+}
+function tutorialVisual(){
+ if(!lesson)return null;const host=$('canvas-host').getBoundingClientRect(),hand=$('guide-hand'),matrix=new DOMMatrix(getComputedStyle(hand).transform),originX=hand.offsetWidth*27.5/64,originY=hand.offsetHeight*6/72;
+ const tip={};
+ const stage=$('stage').getBoundingClientRect();tip.x=stage.left+$('stage').clientLeft+parseFloat(hand.style.left)+originX+matrix.e;tip.y=stage.top+$('stage').clientTop+parseFloat(hand.style.top)+originY+matrix.f;
+ const expected=lesson.step==='rotate'?view.rotationGesturePoint():view.tapTarget(lesson.target());
+ return{step:lesson.step,target:lesson.target(),hidden:hand.hidden,fingertip:tip,expected:expected?{x:host.left+expected.x,y:host.top+expected.y,centreError:expected.centreError}:null,picked:view.pick(tip.x,tip.y),error:expected?Math.hypot(tip.x-host.left-expected.x,tip.y-host.top-expected.y):null,rotationSweep:108};
 }
 function rotate(dx,dy){view.rotate(dx,dy);rotDistance+=Math.hypot(dx,dy);rotations++;if(lesson){const old=lesson.step;lesson.rotated(rotDistance);if(old!==lesson.step)guide();}positionHand();}
 function startJob(){
@@ -73,7 +87,7 @@ $('zoom-plus').onclick=()=>manualZoom(view.manualZoom*1.25,'plus');$('zoom-minus
 $('stage').addEventListener('keydown',e=>{if(mode!=='play'||!ready||e.altKey||e.ctrlKey||e.metaKey||e.target.closest('button'))return;const delta={ArrowLeft:[-14,0],ArrowRight:[14,0],ArrowUp:[0,-14],ArrowDown:[0,14]}[e.key];if(delta){e.preventDefault();rotate(...delta);record('keyboard-rotate',{key:e.key});}else if(['+','=','-','0'].includes(e.key)){e.preventDefault();manualZoom(e.key==='0'?1:e.key==='-'?view.manualZoom/1.25:view.manualZoom*1.25,'keyboard');}});
 window.addEventListener('resize',()=>requestAnimationFrame(positionHand));
 function updateSound(){$('sound').setAttribute('aria-pressed',String(soundOn));$('sound').setAttribute('aria-label',soundOn?'Выключить звук':'Включить звук');}updateSound();$('sound').onclick=()=>{soundOn=!soundOn;storage.set(SOUND,soundOn?'on':'off');updateSound();};
-window.__salvage={snapshot:()=>({ready,screen:mode,level:level?.id,total:level?.pieces.length||0,active:puzzle?[...puzzle.active.keys()]:[],available:puzzle?available([...puzzle.active.values()]).map(p=>p.id):[],removed:puzzle?[...puzzle.removed]:[],busy:!!puzzle?.busy,won:!!puzzle?.won,tutorial:lesson?.step||null,progress:structuredClone(progress),markers:view&&puzzle?view.markers():[],angle:view?[view.root.rotation.x,view.root.rotation.y]:[],zoom:view?.manualZoom,inputMode:gesture.mode,assetSHA256:view?.assetSHA256,physics:view?.qaProof}),events:()=>events.map(e=>structuredClone(e)),arrows:()=>view?.arrowAudit(),appearance:()=>view?.appearanceAudit(),geometry:()=>view?.geometryAudit(),metrics:()=>view?.metrics(),framing:id=>view?.framingAudit(id)};
+window.__salvage={snapshot:()=>({ready,screen:mode,level:level?.id,total:level?.pieces.length||0,active:puzzle?[...puzzle.active.keys()]:[],available:puzzle?available([...puzzle.active.values()]).map(p=>p.id):[],removed:puzzle?[...puzzle.removed]:[],busy:!!puzzle?.busy,won:!!puzzle?.won,tutorial:lesson?.step||null,progress:structuredClone(progress),markers:view&&puzzle?view.markers():[],angle:view?[view.root.rotation.x,view.root.rotation.y]:[],zoom:view?.manualZoom,inputMode:gesture.mode,assetSHA256:view?.assetSHA256,physics:view?.qaProof}),events:()=>events.map(e=>structuredClone(e)),arrows:()=>view?.arrowAudit(),paintedArrows:()=>view?.paintedArrowAudit(),tutorialVisual,appearance:()=>view?.appearanceAudit(),geometry:()=>view?.geometryAudit(),metrics:()=>view?.metrics(),framing:id=>view?.framingAudit(id)};
 function fatal(e){console.error(e);$('fatal-message').textContent=e.message;changeScreen('fatal');record('fatal',{message:e.message});}
 async function boot(){try{
  library=libraryFromCertificate(await(await fetch(new URL('./assets/puzzle-library.json',import.meta.url))).json());for(const l of library){const errors=validateLevel(l);if(errors.length)throw Error(errors.join(', '));}
