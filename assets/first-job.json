@@ -3,7 +3,7 @@
   "id": "intro",
   "name": "Первый заказ",
   "asset": "./assets/teapot.glb",
-  "assetSHA256": "4fe00527cd7523c4c1c4b39c43cbe0f6a9c5609ef272fe5d156775cb92aa88a1",
+  "assetSHA256": "7dd55bfed01445318324cbcf62b968a96e94b269480c1afd93b370fc1f0eeeb0",
   "pathDistance": 6,
   "reachableStates": 100,
   "solution": [
@@ -186,7 +186,7 @@
         "min": [
           -0.5593451857566833,
           0.3700000047683716,
-          -1.0600179433822632
+          -1.214639663696289
         ],
         "max": [
           0.8073630332946777,

@@ -16,7 +16,9 @@ export function pointAtUV(geometry,u,v,normal){
 export function metalInk(){
  const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const c=canvas.getContext('2d');
  const path=new Path2D('M 102 215 L 154 215 L 154 112 L 205 112 L 128 34 L 51 112 L 102 112 Z');
- c.strokeStyle='#efdfbc';c.lineWidth=16;c.lineJoin='round';c.stroke(path);c.fillStyle='#122f37';c.fill(path);
+ // Painted cream keyline stays legible on orange tubing and dark machinery.
+ // It is ink on existing triangles, not a new plate or floating solid.
+ c.strokeStyle='#fff2d4';c.lineWidth=30;c.lineJoin='round';c.stroke(path);c.fillStyle='#092630';c.fill(path);
  // Restrained constant paint chips. They do not encode blocking state.
  c.globalCompositeOperation='destination-out';for(const[x,y,w,h]of[[110,180,3,5],[145,140,3,3],[92,91,4,2]])c.fillRect(x,y,w,h);
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;

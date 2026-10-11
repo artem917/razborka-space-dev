@@ -108,3 +108,24 @@ body{display:flow-root}
 @media(max-width:340px) and (max-height:780px) and (orientation:portrait){
  .workshop{grid-template-rows:50px 82px minmax(0,1fr) 70px 144px}
 }
+
+/* Brakych is the sole guidance channel; full-copy reserve prevents typing reflow. */
+.typewriter{display:grid;white-space:normal;cursor:pointer}.typewriter>span{grid-area:1/1}.dialogue-reserve{visibility:hidden;pointer-events:none}.dialogue-typed{align-self:start}.speech-bubble{cursor:pointer}.speech-bubble:focus-visible{outline:2px solid #53d5dd;outline-offset:4px}
+.dialogue-tools{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:6px;min-height:17px}.dialogue-tools small{font-size:10px;line-height:1.2;color:#586263}.dialogue-tools .text-button{font-size:10px;padding:0;min-height:22px;color:#304a4d}
+.feedback{display:none}.control-guide{font-size:12px}#canvas-host{bottom:58px}
+.inspector .speech-bubble{min-height:228px}.inspector #brakych-line{font-size:16px;line-height:1.45}.inspector .eyebrow{margin-bottom:7px}
+@media(max-width:900px) and (orientation:portrait){#canvas-host{inset:22px 8px 50px}.inspector .speech-bubble{min-height:0;padding:22px 27px 22px 42px}.inspector #brakych-line{font-size:13px;line-height:1.35;margin:0}.inspector .eyebrow{font-size:9px;margin-bottom:4px}.inspector img{filter:drop-shadow(0 0 2px #ffe3ad) drop-shadow(0 0 12px #163b4e) drop-shadow(0 4px 6px #071721)}.dialogue-tools{margin-top:4px}.dialogue-tools small,.dialogue-tools .text-button{font-size:9px}}
+@media(max-width:340px) and (orientation:portrait){.inspector .speech-bubble{padding:24px 24px 24px 36px}.inspector #brakych-line{font-size:12px;line-height:1.35}.dialogue-tools{gap:3px}}
+@media(max-width:600px){.briefing-dialogue .speech-bubble{padding:35px 36px 42px 44px;min-height:240px}}
+@media(max-width:600px) and (orientation:portrait){.workshop{grid-template-rows:54px 90px minmax(0,1fr) 78px 168px}.inspector .speech-bubble{padding-top:27px;padding-bottom:27px}}
+@media(max-width:340px) and (orientation:portrait){.workshop{grid-template-rows:50px 96px minmax(0,1fr) 76px 176px}}
+@media(max-width:600px) and (max-height:780px) and (orientation:portrait){.workshop{grid-template-rows:50px 78px minmax(0,1fr) 70px 148px}.inspector .speech-bubble{padding-top:25px;padding-bottom:25px}}
+@media(max-width:340px) and (max-height:780px) and (orientation:portrait){.workshop{grid-template-rows:50px 82px minmax(0,1fr) 70px 160px}}
+@media(max-width:900px) and (orientation:portrait){.inspector .eyebrow{margin-left:8px}}
+@media(min-width:601px) and (max-width:900px) and (orientation:portrait){.workshop{grid-template-rows:64px 100px minmax(0,1fr) 84px 188px}.inspector .speech-bubble{padding:34px 55px 34px 86px}.inspector #brakych-line{font-size:15px}}
+
+@media(max-width:600px) and (orientation:portrait){.workshop{grid-template-rows:54px 90px minmax(0,1fr) 58px 168px}}
+@media(max-width:340px) and (orientation:portrait){.workshop{grid-template-rows:50px 96px minmax(0,1fr) 56px 176px}}
+@media(max-width:600px) and (max-height:780px) and (orientation:portrait){.workshop{grid-template-rows:50px 78px minmax(0,1fr) 58px 148px}}
+@media(max-width:340px) and (max-height:780px) and (orientation:portrait){.workshop{grid-template-rows:50px 82px minmax(0,1fr) 56px 160px}}
+@media(min-width:601px) and (max-width:900px) and (orientation:portrait){.workshop{grid-template-rows:64px 100px minmax(0,1fr) 64px 188px}}

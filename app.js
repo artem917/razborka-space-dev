@@ -3,6 +3,8 @@ import {Puzzle,available,validateLevel} from './puzzle.js';
 import {ViewGesture,MIN_ZOOM,MAX_ZOOM} from './view-input.js';
 import {WorkshopScene} from './scene.js';
 import {ObstructionLesson} from './onboarding.js';
+import {BrakychDialogue} from './dialogue.js';
+import {puzzleStage} from './stage-scale.js';
 const $=id=>document.getElementById(id),KEY='razborka.firstRun.v1',OLD_TUTORIAL='razborka.tutorial.v1',SOUND='razborka.sound.v1';
 const storage={get(k){try{return localStorage.getItem(k);}catch{return null;}},set(k,v){try{localStorage.setItem(k,v);}catch{}}};
 let saved;try{saved=JSON.parse(storage.get(KEY)||'{}');}catch{saved={};}
@@ -13,32 +15,41 @@ const query=new URLSearchParams(location.search),qa=query.get('qa')==='1',gestur
 const save=()=>storage.set(KEY,JSON.stringify(progress));
 const record=(type,data={})=>{events.push({type,time:Math.round(performance.now()),...data});if(events.length>1000)events.shift();};
 function changeScreen(next){mode=next;document.body.dataset.screen=next;for(const id of ['splash','intro','win','preview','fatal'])$(id).hidden=id!==({splash:'splash',intro:'intro',victory:'win',preview:'preview',fatal:'fatal'}[next]);record('screen',{screen:next});}
-function intro(){changeScreen('intro');if(progress.firstJobComplete&&orderIndex===0)$('intro-line').textContent='Чайник вернулся. Говорит, что забыл выключить себя.';}
+function intro(){changeScreen('intro');introTalk.say('intro-'+orderIndex,orderIndex===0?(progress.firstJobComplete?'Чайник вернулся. Говорит, что забыл выключить себя.':'Воду обещали вскипятить за три секунды. Воду не нашли. Производителя тоже.'):orderIndex===1?'Тот же чайник. Деталей больше. Производитель называет это улучшением.':'Детали переставили. Ответственность — тоже.');}
 function sound(kind){if(!soundOn)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const notes=kind==='win'?[523,659,784,1046]:kind==='blocked'?[130,100]:[420+(puzzle?.removed.length||0)*22,820];notes.forEach((f,i)=>{const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.09;o.type=kind==='blocked'?'triangle':'sine';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.025,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+.2);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+.22);});}catch{}}
-function feedback(text,bad=false){clearTimeout(feedbackTimer);$('feedback').textContent=text;$('feedback').className='feedback show'+(bad?' bad':'');feedbackTimer=setTimeout(()=>$('feedback').classList.remove('show'),1800);}
+function makeDialogue(id){
+ const el=$(id),text=el.textContent.trim();el.classList.add('typewriter');el.innerHTML='<span class="dialogue-reserve" aria-hidden="true"></span><span class="dialogue-typed"></span>';
+ return new BrakychDialogue({reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,emit:(type,data)=>record(type,data),render:line=>{el.querySelector('.dialogue-reserve').textContent=line.text;el.querySelector('.dialogue-typed').textContent=line.shown;el.closest('.speech-bubble').dataset.typing=String(line.typing);if(id==='brakych-line'){$('dialogue-cue').textContent=line.typing?'Нажми — дочитаю':line.next?'Нажми — дальше':line.action?'Теперь попробуй на стенде':'Смотри стрелки на деталях';}}});
+}
+const talk=makeDialogue('brakych-line'),introTalk=makeDialogue('intro-line'),winTalk=makeDialogue('win-line');
+function tickDialogue(){talk.tick();introTalk.tick();winTalk.tick();requestAnimationFrame(tickDialogue);}requestAnimationFrame(tickDialogue);
+function feedback(text,bad=false){talk.say('feedback-'+events.length,text,{action:lesson?.step||null});record('brakych-feedback',{text,bad});}
+function activeTalk(){return mode==='play'?talk:mode==='intro'?introTalk:mode==='victory'?winTalk:null;}
+function dialogueTap(){const d=activeTalk();return d?d.tap():false;}
+document.addEventListener('click',e=>{if(e.target.closest('button,canvas,summary,details'))return;if(['play','intro','victory'].includes(mode))dialogueTap();});
+document.querySelectorAll('.speech-bubble').forEach(el=>{el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label','Реплика Бракыча: дочитать или продолжить');el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();dialogueTap();}});});
 function update(){
  $('counter').textContent=puzzle.removed.length+'/'+level.pieces.length;
- const shell=[...puzzle.active.values()].filter(p=>p.stage==='shell').length;
- $('stage-status').textContent=puzzle.won?'ЯДРО СПАСЕНО':puzzle.active.size===1?'ТЕРМОЯДРО':shell?'ОБОЛОЧКА':'ВНУТРЕННИЙ МЕХАНИЗМ';
- if(!shell&&puzzle.active.size>1)$('brakych-line').textContent='Вот теперь интересно. Ядро держат эти блоки. Разбирай по стрелкам.';
- if(!shell&&puzzle.active.size===1)$('brakych-line').textContent='Осталось ядро. Нажми на него — пусть остывает отдельно.';
+ const stage=puzzleStage([...puzzle.active.values()]);
+ $('stage-status').textContent=puzzle.won?'ЯДРО СПАСЕНО':stage==='core'?'ТЕРМОЯДРО':stage==='shell'?'ОБОЛОЧКА':'ВНУТРЕННИЙ МЕХАНИЗМ';
+ if(!puzzle.won&&view.enterStage(stage)){zoomControls();positionHand();record('stage-entry',{stage,preset:view.stageScale.preset,manualZoom:view.manualZoom});if(stage==='inner')talk.say('inner-'+generation,'Ядро держат эти блоки. Вращай сборку, ищи стрелки на металле.');if(stage==='core')talk.say('core-'+generation,'Ядро свободно. Поверни его, найди стрелку — и снимай. Руками не грейся.');}
 }
 function endTutorial(skipped=false){
  if(!lesson)return;lesson=null;progress.tutorialSeen=true;progress.obstructionLessonSeen=true;progress.obstructionLessonVersion=LESSON_VERSION;save();storage.set(OLD_TUTORIAL,'seen');
- $('tutorial').hidden=true;$('guide-hand').hidden=true;delete $('stage').dataset.onboarding;view.setTutorialFocus(null);record('tutorial-complete',{skipped,version:LESSON_VERSION});
+ $('skip-tutorial').hidden=true;$('guide-hand').hidden=true;delete $('stage').dataset.onboarding;view.setTutorialFocus(null);talk.say('lesson-complete-'+generation,skipped?'Разбирай по стрелкам. Если упёрлось — ищи помеху.':'Вот и весь секрет: сперва помеха, потом деталь. Теперь чайник твой.');record('tutorial-complete',{skipped,version:LESSON_VERSION});
 }
 function guide(){
  if(!lesson)return;const step=lesson.step;if(step==='done'){endTutorial();return;}
- $('stage').dataset.onboarding=step;$('tutorial').hidden=false;$('guide-hand').className='guide-hand '+(step==='rotate'?'drag':'tap');
- const text={rotate:['01 / 04 · ОСМОТРИ','Потяни — поверни чайник','Веди пальцем по стенду. Это вращение, не снятие.'],attempt:['02 / 04 · ПРОВЕРЬ','Нажми на верхнюю панель','Коснись панели под крышкой. Не тяни её пальцем.'],blocker:['03 / 04 · УПОР','Панели мешает крышка','Теперь нажми на красную крышку — сними препятствие.'],retry:['04 / 04 · ПОВТОРИ','Снова нажми на панель','Крышка снята. Панель выйдет вверх по своей стрелке.']}[step];
- [$('guide-step').textContent,$('guide-title').textContent,$('guide-text').textContent]=text;
+ $('stage').dataset.onboarding=step;$('skip-tutorial').hidden=false;$('guide-hand').className='guide-hand '+(step==='rotate'?'drag':'tap');
+ const lines={rotate:['Потяни по стенду — поверни чайник. Перчатка показывает широкий жест под ним.','Вращай чайник. Детали снимаются коротким нажатием.'],attempt:['Проверь панель под крышкой: нажми в центр, куда указывает перчатка.','Нажми на верхнюю панель. Сейчас проверим её путь.'],blocker:['Панель упёрлась в крышку. Вот настоящая помеха. Сначала сними красную крышку.','Нажми на красную крышку. Её стрелка смотрит вверх.'],retry:['Крышка снята. Теперь снова нажми на панель: её путь вверх открыт.','Повтори нажатие на панель. Теперь она выйдет вверх.']}[step];
+ talk.say('lesson-'+generation+'-'+step,lines[0],{action:step,next:()=>talk.say('lesson-'+generation+'-'+step+'-action',lines[1],{action:step})});
  view.setTutorialFocus(step==='rotate'?null:lesson.target());positionHand();record('tutorial-step',{step,target:lesson.target()});
 }
 function positionHand(){
  if(!lesson)return;const rotate=lesson.step==='rotate',host=$('canvas-host'),hand=$('guide-hand');
  const point=rotate?view.rotationGesturePoint():view.tapTarget(lesson.target());
  hand.hidden=!point;if(!point)return;
- if(rotate){const room=$('tutorial').offsetTop-host.offsetTop-point.y-4,height=Math.min(35,room/(1-6/72));if(height<20){hand.hidden=true;return;}hand.style.height=height+'px';hand.style.width=(height*64/72)+'px';}else{hand.style.height='';hand.style.width='';}
+ if(rotate){const room=$('stage').clientHeight-host.offsetTop-point.y-8,height=Math.min(35,room/(1-6/72));if(height<20){hand.hidden=true;return;}hand.style.height=height+'px';hand.style.width=(height*64/72)+'px';}else{hand.style.height='';hand.style.width='';}
  // The SVG fingertip is (27.5,6), not the centre of its bounding rectangle.
  const tipX=hand.offsetWidth*27.5/64,tipY=hand.offsetHeight*6/72;
  hand.style.left=(host.offsetLeft+point.x-tipX)+'px';hand.style.top=(host.offsetTop+point.y-tipY)+'px';
@@ -53,27 +64,26 @@ function tutorialVisual(){
 }
 function rotate(dx,dy){view.rotate(dx,dy);rotDistance+=Math.hypot(dx,dy);rotations++;if(lesson){const old=lesson.step;lesson.rotated(rotDistance);if(old!==lesson.step)guide();}positionHand();}
 function startJob(){
- if(!ready)return;generation++;gesture.reset();pointerPiece=null;puzzle=new Puzzle(level);view.reset();started=performance.now();blockedTaps=0;rotations=0;rotDistance=0;
- changeScreen('play');clearTimeout(feedbackTimer);$('feedback').classList.remove('show');$('brakych-line').textContent='Сними оболочку. Под ней — механизм. Под механизмом — неприятности.';update();record('load',{level:level.id,parts:level.pieces.length,assetSHA256:view.assetSHA256});
- if(level.tutorial&&(forceLesson||!progress.obstructionLessonSeen||Number(progress.obstructionLessonVersion||0)<LESSON_VERSION)){forceLesson=false;lesson=new ObstructionLesson(level.tutorial);guide();}else{lesson=null;$('tutorial').hidden=true;$('guide-hand').hidden=true;delete $('stage').dataset.onboarding;view.setTutorialFocus(null);}
+ if(!ready)return;generation++;gesture.reset();pointerPiece=null;puzzle=new Puzzle(level);view.reset();zoomControls();started=performance.now();blockedTaps=0;rotations=0;rotDistance=0;
+ changeScreen('play');clearTimeout(feedbackTimer);$('feedback').classList.remove('show');talk.say('job-'+generation,'Сними оболочку. Под ней — механизм. Под механизмом — неприятности.');update();record('load',{level:level.id,parts:level.pieces.length,assetSHA256:view.assetSHA256});
+ if(level.tutorial&&(forceLesson||!progress.obstructionLessonSeen||Number(progress.obstructionLessonVersion||0)<LESSON_VERSION)){forceLesson=false;lesson=new ObstructionLesson(level.tutorial);guide();}else{lesson=null;$('skip-tutorial').hidden=true;$('guide-hand').hidden=true;delete $('stage').dataset.onboarding;view.setTutorialFocus(null);}
 }
 function attempt(id){
  if(mode!=='play'||!id||puzzle.busy||puzzle.won)return;
  if(lesson&&!lesson.permits(id)){feedback(lesson.step==='rotate'?'Сначала потяни чайник в сторону.':'Перчатка показывает деталь для этого примера. Можно пропустить обучение.');return;}
  const result=puzzle.begin(id);
  if(!result.ok){if(result.blocked?.length){blockedTaps++;record('blocked',{id,blockers:result.blocked,penalty:0});view.flash(id,result.blocked,!!lesson);sound('blocked');
-  if(lesson){const old=lesson.step;lesson.blocked(id,result.blocked);if(old!==lesson.step)guide();feedback('Панель упёрлась в крышку.',true);}else feedback('Деталь упёрлась. Поверни конструкцию и осмотри соседей.',true);
+  if(lesson){const old=lesson.step;lesson.blocked(id,result.blocked);if(old!==lesson.step)guide();}else feedback('Деталь упёрлась. Поверни конструкцию и осмотри соседей.',true);
  }return;}
  const token=generation;record('remove-start',{id,dir:result.piece.dir});sound('remove');
  view.remove(id,proof=>{if(token!==generation)return;if(!puzzle.complete(id))throw Error('Несогласованное завершение извлечения');record('remove-complete',{id,...proof});update();if(lesson){lesson.removed(id);guide();}
-  if(puzzle.won){progress.firstJobComplete=true;if(!progress.completedTemplates.includes(level.id))progress.completedTemplates.push(level.id);save();sound('win');$('win-detail').textContent=level.pieces.length+' деталей · '+Math.round((performance.now()-started)/1000)+' сек · ни капли лишнего чая';document.querySelector('#win .speech-bubble p').textContent=level.reaction;$('next-order').textContent=orderIndex+1<library.length?'Следующий заказ →':'В мастерскую →';record('win',{level:level.id,removed:[...puzzle.removed],blockedTaps,rotations});changeScreen('victory');$('next-order').focus({preventScroll:true});}
+  if(puzzle.won){progress.firstJobComplete=true;if(!progress.completedTemplates.includes(level.id))progress.completedTemplates.push(level.id);save();sound('win');$('win-detail').textContent=level.pieces.length+' деталей · '+Math.round((performance.now()-started)/1000)+' сек · ни капли лишнего чая';winTalk.say('win-'+generation,level.reaction);$('next-order').textContent=orderIndex+1<library.length?'Следующий заказ →':'В мастерскую →';record('win',{level:level.id,removed:[...puzzle.removed],blockedTaps,rotations});changeScreen('victory');$('next-order').focus({preventScroll:true});}
  });
 }
 async function loadOrder(index,{keepSplash=false}={}){
- ready=false;orderIndex=index;level=library[index];generation++;puzzle=null;gesture.reset();lesson=null;$('guide-hand').hidden=true;$('tutorial').hidden=true;view.setTutorialFocus(null);
- if(!keepSplash)changeScreen('intro');$('start-job').disabled=true;$('start-job').textContent='Готовим стенд…';
+ ready=false;orderIndex=index;level=library[index];generation++;puzzle=null;gesture.reset();lesson=null;$('guide-hand').hidden=true;$('skip-tutorial').hidden=true;view.setTutorialFocus(null);
+ if(!keepSplash)intro();$('start-job').disabled=true;$('start-job').textContent='Готовим стенд…';
  document.querySelector('.job-heading .eyebrow').textContent='ЗАКАЗ '+String(index+1).padStart(3,'0')+' · '+(index===0?'ПЕРВАЯ СМЕНА':'БЛОЧНАЯ СБОРКА');
- if(index)$('intro-line').textContent=index===1?'Тот же чайник. Внутри деталей больше. Производитель называет это улучшением.':'Детали переставили. Ответственность — тоже.';
  await view.load(level,{qa,progress:p=>{$('load-bar').style.width=Math.round(p*100)+'%';$('load-caption').textContent=p<.9?'Подключаем мастерскую…':'Почти готовы. Чайник уже подозревает.';}});
  ready=true;$('counter').textContent='0/'+level.pieces.length;$('start-job').disabled=false;$('start-job').textContent='Принять заказ →';$('load-caption').textContent='';zoomControls();$('qa-status').textContent=JSON.stringify(view.geometryAudit(),null,2);record('asset-ready',view.geometryAudit());
 }
@@ -88,7 +98,7 @@ $('zoom-plus').onclick=()=>manualZoom(view.manualZoom*1.25,'plus');$('zoom-minus
 $('stage').addEventListener('keydown',e=>{if(mode!=='play'||!ready||e.altKey||e.ctrlKey||e.metaKey||e.target.closest('button'))return;const delta={ArrowLeft:[-14,0],ArrowRight:[14,0],ArrowUp:[0,-14],ArrowDown:[0,14]}[e.key];if(delta){e.preventDefault();rotate(...delta);record('keyboard-rotate',{key:e.key});}else if(['+','=','-','0'].includes(e.key)){e.preventDefault();manualZoom(e.key==='0'?1:e.key==='-'?view.manualZoom/1.25:view.manualZoom*1.25,'keyboard');}});
 window.addEventListener('resize',()=>requestAnimationFrame(positionHand));
 function updateSound(){$('sound').setAttribute('aria-pressed',String(soundOn));$('sound').setAttribute('aria-label',soundOn?'Выключить звук':'Включить звук');}updateSound();$('sound').onclick=()=>{soundOn=!soundOn;storage.set(SOUND,soundOn?'on':'off');updateSound();};
-window.__salvage={snapshot:()=>({ready,screen:mode,level:level?.id,total:level?.pieces.length||0,active:puzzle?[...puzzle.active.keys()]:[],available:puzzle?available([...puzzle.active.values()]).map(p=>p.id):[],removed:puzzle?[...puzzle.removed]:[],busy:!!puzzle?.busy,won:!!puzzle?.won,tutorial:lesson?.step||null,progress:structuredClone(progress),markers:view&&puzzle?view.markers():[],angle:view?[view.root.rotation.x,view.root.rotation.y]:[],zoom:view?.manualZoom,inputMode:gesture.mode,assetSHA256:view?.assetSHA256,physics:view?.qaProof}),events:()=>events.map(e=>structuredClone(e)),arrows:()=>view?.arrowAudit(),paintedArrows:()=>view?.paintedArrowAudit(),tutorialVisual,appearance:()=>view?.appearanceAudit(),geometry:()=>view?.geometryAudit(),metrics:()=>view?.metrics(),framing:id=>view?.framingAudit(id)};
+window.__salvage={snapshot:()=>({ready,screen:mode,level:level?.id,total:level?.pieces.length||0,active:puzzle?[...puzzle.active.keys()]:[],available:puzzle?available([...puzzle.active.values()]).map(p=>p.id):[],removed:puzzle?[...puzzle.removed]:[],busy:!!puzzle?.busy,won:!!puzzle?.won,tutorial:lesson?.step||null,progress:structuredClone(progress),markers:view&&puzzle?view.markers():[],angle:view?[view.root.rotation.x,view.root.rotation.y]:[],zoom:view?.manualZoom,stage:view?.stageScale.stage,stagePreset:view?.stageScale.preset,dialogue:activeTalk()?.snapshot(),inputMode:gesture.mode,assetSHA256:view?.assetSHA256,physics:view?.qaProof}),events:()=>events.map(e=>structuredClone(e)),arrows:()=>view?.arrowAudit(),paintedArrows:()=>view?.paintedArrowAudit(),tutorialVisual,appearance:()=>view?.appearanceAudit(),geometry:()=>view?.geometryAudit(),metrics:()=>view?.metrics(),framing:id=>view?.framingAudit(id)};
 function fatal(e){console.error(e);$('fatal-message').textContent=e.message;changeScreen('fatal');record('fatal',{message:e.message});}
 async function boot(){try{
  library=libraryFromCertificate(await(await fetch(new URL('./assets/puzzle-library.json',import.meta.url))).json());for(const l of library){const errors=validateLevel(l);if(errors.length)throw Error(errors.join(', '));}
@@ -96,7 +106,7 @@ async function boot(){try{
  new ResizeObserver(()=>requestAnimationFrame(positionHand)).observe($('canvas-host'));
  canvas.addEventListener('pointerdown',e=>{if(mode!=='play'||!ready)return;e.preventDefault();const action=gesture.down(e.pointerId,e.clientX,e.clientY,performance.now(),view.manualZoom);canvas.setPointerCapture(e.pointerId);if(action.type==='single-start'){pointerPiece=view.pick(e.clientX,e.clientY);view.select(pointerPiece);}else{pointerPiece=null;view.select(null);record(action.type);}});
  canvas.addEventListener('pointermove',e=>{if(mode!=='play')return;if(e.pointerType==='mouse'&&!e.buttons)view.select(view.pick(e.clientX,e.clientY));const action=gesture.move(e.pointerId,e.clientX,e.clientY);if(action?.type==='pinch'){manualZoom(action.zoom,'pinch');return;}const delta=action?.delta;if(delta&&(delta[0]||delta[1])){view.select(null);rotate(...delta);}});
- canvas.addEventListener('pointerup',e=>{if(mode!=='play')return;const result=gesture.up(e.pointerId,e.clientX,e.clientY,performance.now());if(result.tap){const id=view.pick(e.clientX,e.clientY);if(id&&id===pointerPiece)attempt(id);}if(result.pinchEnd)record('pinch-end');pointerPiece=null;view.select(null);if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);});
+ canvas.addEventListener('pointerup',e=>{if(mode!=='play')return;const result=gesture.up(e.pointerId,e.clientX,e.clientY,performance.now());if(result.tap&&!talk.typing){const id=view.pick(e.clientX,e.clientY);if(id&&id===pointerPiece){if(talk.line?.next)talk.tap();attempt(id);}else dialogueTap();}else if(result.tap)talk.tap();if(result.pinchEnd)record('pinch-end');pointerPiece=null;view.select(null);if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);});
  canvas.addEventListener('pointercancel',e=>{gesture.cancel(e.pointerId);pointerPiece=null;view.select(null);record('pointer-cancel');});canvas.addEventListener('pointerleave',()=>{if(gesture.mode==='idle')view.select(null);});
  const dev=qa?library.findIndex(l=>l.id===query.get('template')):-1;await loadOrder(dev<0?0:dev,{keepSplash:true});
  }catch(e){fatal(e);}}

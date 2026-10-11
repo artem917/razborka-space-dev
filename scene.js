@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from './vendor/loaders/GLTFLoader.js';
 import { mergeGeometries } from './vendor/utils/BufferGeometryUtils.js';
+import {StageScale} from './stage-scale.js';
 import {clampZoom} from './view-input.js';
 import {metalInk,pointAtUV} from './surface-marks.js';
 import {surfaceInk,INK_SAMPLES} from './surface-ink.js';
@@ -16,13 +17,15 @@ export class WorkshopScene {
   for(const[p,c,i]of[[[-4,6,7],0xffdfb3,3.7],[[4,2,-4],0x63cad8,3.0],[[3,0,6],0xd8e6ff,.8]]){const l=new THREE.DirectionalLight(c,i);l.position.fromArray(p);this.scene.add(l);}
   const env=document.createElement('canvas');env.width=512;env.height=256;const ctx=env.getContext('2d'),g=ctx.createLinearGradient(0,0,0,256);g.addColorStop(0,'#b9d4d9');g.addColorStop(.45,'#506978');g.addColorStop(.7,'#182934');g.addColorStop(1,'#161c24');ctx.fillStyle=g;ctx.fillRect(0,0,512,256);ctx.fillStyle='#fff4d9';ctx.fillRect(80,25,55,95);ctx.fillStyle='#659da9';ctx.fillRect(355,50,50,100);
   const tex=new THREE.CanvasTexture(env);tex.mapping=THREE.EquirectangularReflectionMapping;tex.colorSpace=THREE.SRGBColorSpace;const pm=new THREE.PMREMGenerator(this.renderer);this.environment=pm.fromEquirectangular(tex);this.scene.environment=this.environment.texture;tex.dispose();pm.dispose();
-  this.ray=new THREE.Raycaster();this.pointer=new THREE.Vector2();this.center=new THREE.Vector3(0,1.65,.08);this.targetCenter=this.center.clone();this.cameraWidth=4.5;this.targetWidth=4.5;this.manualZoom=1;this.inkMaterial=metalInk();
+  this.ray=new THREE.Raycaster();this.pointer=new THREE.Vector2();this.center=new THREE.Vector3(0,1.65,.08);this.targetCenter=this.center.clone();this.cameraWidth=4.5;this.targetWidth=4.5;this.manualZoom=1;this.stageScale=new StageScale();this.inkMaterial=metalInk();
   this.path=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x74f2d3,transparent:true,opacity:.65}));this.root.add(this.path);this.path.visible=false;
   new ResizeObserver(()=>this.resize()).observe(host);this.resetAngle();this.resize();this.tick=this.tick.bind(this);this.raf=requestAnimationFrame(this.tick);
  }
- resize(){this.width=Math.max(1,this.host.clientWidth);this.height=Math.max(1,this.host.clientHeight);this.renderer.setSize(this.width,this.height,false);if(this.views.size)this.fitInitialAssembly();this.updateCamera();}
+ resize(){this.width=Math.max(1,this.host.clientWidth);this.height=Math.max(1,this.host.clientHeight);this.renderer.setSize(this.width,this.height,false);if(this.views.size)this.fitInitialAssembly();this.stageScale.viewport(this.isMobile());this.camera.zoom=this.manualZoom*this.stageScale.preset;this.updateCamera();}
  updateCamera(){const half=this.cameraWidth/2,h=half*this.height/this.width;Object.assign(this.camera,{left:-half,right:half,top:h,bottom:-h});this.camera.updateProjectionMatrix();}
- setZoom(value){this.manualZoom=clampZoom(value);this.camera.zoom=this.manualZoom;this.updateCamera();return this.manualZoom;}
+ setZoom(value){this.manualZoom=clampZoom(value);this.camera.zoom=this.manualZoom*this.stageScale.preset;this.updateCamera();return this.manualZoom;}
+ isMobile(){return matchMedia('(max-width: 900px) and (orientation: portrait)').matches;}
+ enterStage(stage){if(!this.stageScale.enter(stage,this.isMobile()))return false;this.fitInitialAssembly();this.setZoom(this.manualZoom);return true;}
  resetAngle(){this.root.rotation.set(.22,-.45,0);}
  rotate(dx,dy){this.root.rotation.y+=dx*.009;this.root.rotation.x=THREE.MathUtils.clamp(this.root.rotation.x+dy*.009,-1.5,1.5);this.root.updateMatrixWorld(true);}
  async load(level,{qa=false,progress=()=>{}}={}){
@@ -70,12 +73,14 @@ export class WorkshopScene {
  makeArrows(view){this.pickMeshes.push(surfaceInk(view,this.ray,this.inkMaterial));}
  unload(){this.animation=null;this.inkStamp=null;this.tapStamp=null;this.markerStamp=null;this.markerCache=new Map();for(const v of this.views.values()){for(const m of v.meshes){m.geometry.dispose();m.material.dispose();}v.arrowMesh?.geometry.dispose();v.arrowMesh?.material.dispose();}this.model?.removeFromParent();this.views.clear();this.pickMeshes=[];this.active.clear();this.tutorialFocus=null;}
 
- reset(){this.animation=null;this.inkStamp=null;this.path.visible=false;this.selected=null;this.hinted=null;this.tutorialFocus=null;this.flashIds=null;this.active=new Set(this.level.pieces.map(p=>p.id));for(const v of this.views.values()){v.group.visible=true;v.group.position.copy(v.start);}this.resetAngle();this.fitInitialAssembly();}
+ reset(){this.stageScale.reset();this.enterStage('shell');this.animation=null;this.inkStamp=null;this.path.visible=false;this.selected=null;this.hinted=null;this.tutorialFocus=null;this.flashIds=null;this.active=new Set(this.level.pieces.map(p=>p.id));for(const v of this.views.values()){v.group.visible=true;v.group.position.copy(v.start);}this.resetAngle();this.fitInitialAssembly();}
  fitInitialAssembly(){
   // Full ORIGINAL bounds only. Removal/animation/rotation never adjusts framing.
   // Rotation-safe horizontal envelope; resize is the only projection refit.
-  const box=new THREE.Box3();for(const v of this.views.values())box.union(v.box);if(box.isEmpty())return;
-  this.center.copy(box.getCenter(new THREE.Vector3()));this.targetCenter.copy(this.center);const s=box.getSize(new THREE.Vector3());
+  const box=new THREE.Box3(),stageBox=new THREE.Box3();for(const v of this.views.values()){box.union(v.box);if(this.stageScale.stage==='core'?v.piece.core:this.stageScale.stage==='inner'?v.piece.stage!=='shell':true)stageBox.union(v.box);}if(box.isEmpty())return;
+  // Preset pivot is the ORIGINAL stage assembly, including any removed blocks.
+  // It changes once on entry, never from the remaining-parts bounding box.
+  this.center.copy((stageBox.isEmpty()?box:stageBox).getCenter(new THREE.Vector3()));this.targetCenter.copy(this.center);const s=box.getSize(new THREE.Vector3());
   const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(.22,-.45,0));let minY=Infinity,maxY=-Infinity;
   for(const x of [-s.x/2,s.x/2])for(const y of [-s.y/2,s.y/2])for(const z of [-s.z/2,s.z/2]){const p=new THREE.Vector3(x,y,z).applyQuaternion(q);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);}
   this.cameraWidth=Math.max(1.05,Math.hypot(s.x,s.z)*1.18,(maxY-minY)*this.width/this.height*1.18);this.targetWidth=this.cameraWidth;
@@ -87,14 +92,20 @@ export class WorkshopScene {
  framingAudit(id='roof-block'){
   this.root.updateMatrixWorld(true);const v=this.views.get(id),points=[];
   if(v)for(const mesh of v.meshes){if(mesh.userData.decal_surface)continue;const attr=mesh.geometry.attributes.position;for(let i=0;i<attr.count;i++)points.push(this.project(new THREE.Vector3().fromBufferAttribute(attr,i).applyMatrix4(mesh.matrixWorld)));}
-  const bounds=points.reduce((b,p)=>({x:Math.min(b.x,p.x),y:Math.min(b.y,p.y),right:Math.max(b.right,p.x),bottom:Math.max(b.bottom,p.y)}),{x:Infinity,y:Infinity,right:-Infinity,bottom:-Infinity});return{cameraPosition:this.camera.position.toArray(),cameraQuaternion:this.camera.quaternion.toArray(),target:[0,0,0],zoom:this.camera.zoom,frustum:[this.camera.left,this.camera.right,this.camera.top,this.camera.bottom,this.camera.near,this.camera.far],projection:this.camera.projectionMatrix.toArray(),pivot:this.center.toArray(),modelScale:this.model?.scale.toArray(),rotation:this.root.rotation.toArray().slice(0,3),viewport:[this.width,this.height],block:id,projected:points.length?{x:bounds.x,y:bounds.y,width:bounds.right-bounds.x,height:bounds.bottom-bounds.y}:null,composite:v?.composite,selected:this.selected};
+  const bounds=points.reduce((b,p)=>({x:Math.min(b.x,p.x),y:Math.min(b.y,p.y),right:Math.max(b.right,p.x),bottom:Math.max(b.bottom,p.y)}),{x:Infinity,y:Infinity,right:-Infinity,bottom:-Infinity});return{cameraPosition:this.camera.position.toArray(),cameraQuaternion:this.camera.quaternion.toArray(),target:[0,0,0],zoom:this.camera.zoom,stage:this.stageScale.stage,stagePreset:this.stageScale.preset,manualZoom:this.manualZoom,frustum:[this.camera.left,this.camera.right,this.camera.top,this.camera.bottom,this.camera.near,this.camera.far],projection:this.camera.projectionMatrix.toArray(),pivot:this.center.toArray(),modelScale:this.model?.scale.toArray(),rotation:this.root.rotation.toArray().slice(0,3),viewport:[this.width,this.height],block:id,projected:points.length?{x:bounds.x,y:bounds.y,width:bounds.right-bounds.x,height:bounds.bottom-bounds.y}:null,composite:v?.composite,selected:this.selected};
  }
  pick(x,y){const r=this.renderer.domElement.getBoundingClientRect();this.pointer.set((x-r.left)/r.width*2-1,-(y-r.top)/r.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);for(const hit of this.ray.intersectObjects(this.pickMeshes.filter(m=>this.active.has(m.userData.piece)),false)){return hit.object.userData.piece;}return null;}
  project(point){const p=point.clone().project(this.camera);return{x:(p.x+1)*this.width/2,y:(1-p.y)*this.height/2};}
  marker(id){const v=this.views.get(id);if(!v||!this.active.has(id))return null;
   const stamp=[this.root.rotation.x.toFixed(4),this.root.rotation.y.toFixed(4),this.cameraWidth.toFixed(2),this.manualZoom.toFixed(4),...this.center.toArray().map(x=>x.toFixed(2)),this.width,this.height,[...this.active].join(',')].join(':');if(this.markerStamp!==stamp){this.markerStamp=stamp;this.markerCache=new Map();}if(this.markerCache.has(id))return this.markerCache.get(id);
-  this.root.updateMatrixWorld(true);const candidates=v.marks.map(m=>v.group.localToWorld(m.anchor.clone()));const c=v.box.getCenter(new THREE.Vector3()).sub(this.center).applyQuaternion(this.root.quaternion);candidates.push(c);
-  const r=this.renderer.domElement.getBoundingClientRect();for(const p of candidates){const point=this.project(p);if(point.x<8||point.x>this.width-8||point.y<8||point.y>this.height-8)continue;if(this.pick(r.left+point.x,r.top+point.y)===id){const value={id,...point};this.markerCache.set(id,value);return value;}}this.markerCache.set(id,null);return null;
+  this.root.updateMatrixWorld(true);const r=this.renderer.domElement.getBoundingClientRect();
+  // Read-only QA targets must survive CSS-pixel rounding: prefer the visible
+  // solid centre, not an ink anchor at a subpixel silhouette edge.
+  const safe=point=>point.x>=8&&point.x<=this.width-8&&point.y>=8&&point.y<=this.height-8&&[[0,0],[-1,0],[1,0],[0,-1],[0,1]].every(([dx,dy])=>this.pick(r.left+point.x+dx,r.top+point.y+dy)===id);
+  const targetBox=v.box.clone();if(id==='lid')targetBox.max.y=Math.min(targetBox.max.y,2.80);
+  const c=targetBox.getCenter(new THREE.Vector3()).sub(this.center).applyQuaternion(this.root.quaternion);
+  const candidates=[c,...v.marks.map(m=>v.group.localToWorld(m.anchor.clone()))];
+  for(const p of candidates){const point=this.project(p);if(safe(point)){const value={id,...point};this.markerCache.set(id,value);return value;}}this.markerCache.set(id,null);return null;
  }
  markers(){return [...this.active].map(id=>this.marker(id)).filter(Boolean);}
  rotationGesturePoint(){
