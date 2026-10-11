@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from './vendor/loaders/GLTFLoader.js';
 import { mergeGeometries } from './vendor/utils/BufferGeometryUtils.js';
+import {clampZoom} from './view-input.js';
 const V=a=>new THREE.Vector3(...a),AXES=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
 export class WorkshopScene {
  constructor(host){
@@ -13,12 +14,14 @@ export class WorkshopScene {
   for(const[p,c,i]of[[[-4,6,7],0xffdfb3,3.7],[[4,2,-4],0x63cad8,3.0],[[3,0,6],0xd8e6ff,.8]]){const l=new THREE.DirectionalLight(c,i);l.position.fromArray(p);this.scene.add(l);}
   const env=document.createElement('canvas');env.width=512;env.height=256;const ctx=env.getContext('2d'),g=ctx.createLinearGradient(0,0,0,256);g.addColorStop(0,'#b9d4d9');g.addColorStop(.45,'#506978');g.addColorStop(.7,'#182934');g.addColorStop(1,'#161c24');ctx.fillStyle=g;ctx.fillRect(0,0,512,256);ctx.fillStyle='#fff4d9';ctx.fillRect(80,25,55,95);ctx.fillStyle='#659da9';ctx.fillRect(355,50,50,100);
   const tex=new THREE.CanvasTexture(env);tex.mapping=THREE.EquirectangularReflectionMapping;tex.colorSpace=THREE.SRGBColorSpace;const pm=new THREE.PMREMGenerator(this.renderer);this.environment=pm.fromEquirectangular(tex);this.scene.environment=this.environment.texture;tex.dispose();pm.dispose();
-  this.ray=new THREE.Raycaster();this.pointer=new THREE.Vector2();this.center=new THREE.Vector3(0,1.65,.08);this.targetCenter=this.center.clone();this.cameraWidth=4.5;this.targetWidth=4.5;
+  this.ray=new THREE.Raycaster();this.pointer=new THREE.Vector2();this.center=new THREE.Vector3(0,1.65,.08);this.targetCenter=this.center.clone();this.cameraWidth=4.5;this.targetWidth=4.5;this.manualZoom=1;this.freeIds=new Set();
   this.path=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x74f2d3,transparent:true,opacity:.65}));this.root.add(this.path);this.path.visible=false;
   new ResizeObserver(()=>this.resize()).observe(host);this.resetAngle();this.resize();this.tick=this.tick.bind(this);this.raf=requestAnimationFrame(this.tick);
  }
  resize(){this.width=Math.max(1,this.host.clientWidth);this.height=Math.max(1,this.host.clientHeight);this.renderer.setSize(this.width,this.height,false);if(this.views.size)this.fitInitialAssembly();this.updateCamera();}
  updateCamera(){const half=this.cameraWidth/2,h=half*this.height/this.width;Object.assign(this.camera,{left:-half,right:half,top:h,bottom:-h});this.camera.updateProjectionMatrix();}
+ setZoom(value){this.manualZoom=clampZoom(value);this.camera.zoom=this.manualZoom;this.updateCamera();return this.manualZoom;}
+ setAvailability(ids){this.freeIds=new Set(ids);for(const[id,v]of this.views)if(v.pathFree)v.pathFree.value=this.active.has(id)&&this.freeIds.has(id)?1:0;}
  resetAngle(){this.root.rotation.set(.22,-.45,0);}
  rotate(dx,dy){this.root.rotation.y+=dx*.009;this.root.rotation.x=THREE.MathUtils.clamp(this.root.rotation.x+dy*.009,-1.5,1.5);this.root.updateMatrixWorld(true);}
  async load(level,{qa=false,progress=()=>{}}={}){
@@ -45,7 +48,7 @@ export class WorkshopScene {
    collisionParts.push({id:piece.id,dir:[...piece.dir],triangles:new Float64Array(triangles)});
    for(const m of sources)m.removeFromParent();const materials=[],meshes=[];
    for(const b of buckets.values()){const geo=mergeGeometries(b.geometries,false);if(!geo)throw Error('Ошибка объединения геометрии');const material=b.material.clone();if(b.paint){material.polygonOffset=true;material.polygonOffsetFactor=-1;material.polygonOffsetUnits=-1;}const m=new THREE.Mesh(geo,material);m.userData.piece=piece.id;m.userData.decal_surface=b.paint;group.add(m);meshes.push(m);this.pickMeshes.push(m);materials.push({material,emissive:material.emissive?.clone(),intensity:material.emissiveIntensity});mergedMeshes++;for(const g of b.geometries)g.dispose();}
-   this.views.set(piece.id,{piece,group,meshes,materials,start:group.position.clone(),box:worldBox,marks:[]});
+   this.views.set(piece.id,{piece,group,meshes,materials,start:group.position.clone(),box:worldBox,solidSourceCount:sources.filter(m=>!m.userData.decal_surface).length,marks:[]});
    if(piece.id==='roof-block')this.groupComposite(this.views.get(piece.id));
   }
   this.model.updateMatrixWorld(true);
@@ -59,18 +62,20 @@ export class WorkshopScene {
  }
  verifyMeshGraph(parts,progress){return new Promise((resolve,reject)=>{const worker=new Worker(new URL('./physics-worker.js',import.meta.url),{type:'module'});worker.onerror=e=>{worker.terminate();reject(Error(e.message));};worker.onmessage=({data})=>{if(data.progress!==undefined){progress(.90+data.progress*.1);return;}worker.terminate();if(data.error){reject(Error(data.error));return;}for(const p of this.level.pieces){if(JSON.stringify(data.graph[p.id].sort())!==JSON.stringify(p.pathBlockers.map(b=>b.id).sort())){reject(Error('Браузерный mesh solver расходится с Blender: '+p.id));return;}}resolve({mode:'browser continuous triangle SAT',graphVerified:true,pairs:data.pairs,milliseconds:data.milliseconds,graph:data.graph});};worker.postMessage({parts},parts.map(p=>p.triangles.buffer));});}
  makeArrows(view){
-  const shell=view.piece.stage==='shell',d=V(view.piece.dir),size=view.box.getSize(new THREE.Vector3()),center=view.box.getCenter(new THREE.Vector3()),length=view.piece.id==='base'?.20:shell?Math.max(.32,Math.min(.44,size.length()*.14)):Math.max(.17,Math.min(.25,size.length()*.14)),positions=[],colors=[],facings=[];const inv=view.group.matrixWorld.clone().invert(),inverseNormal=new THREE.Matrix3().getNormalMatrix(view.group.matrixWorld).invert();
+  const shell=view.piece.stage==='shell',d=V(view.piece.dir),size=view.box.getSize(new THREE.Vector3()),center=view.box.getCenter(new THREE.Vector3()),length=view.piece.id==='base'?.24:shell?Math.max(.40,Math.min(.52,size.length()*.18)):Math.max(.20,Math.min(.29,size.length()*.18)),positions=[],colors=[],facings=[],alongs=[];const inv=view.group.matrixWorld.clone().invert(),inverseNormal=new THREE.Matrix3().getNormalMatrix(view.group.matrixWorld).invert();
   // Keep long painted arrows INSIDE their panel, away from the adjoining lid,
   // energy glass and gauge. The thin base receives a proportionate marking.
-  if(view.piece.id==='front'){center.y=view.box.max.y-.34;center.x=.42;}
-  if(view.piece.id==='upper'){center.y=view.box.max.y-.34;center.x=-.30;}
+  if(view.piece.id==='front'){center.y=view.box.max.y-.36;center.x=.42;}
+  if(view.piece.id==='upper'){center.y=view.box.max.y-.36;center.x=-.30;}
+  if(view.piece.id==='base')center.y=view.box.min.y+.18;
   for(const na of AXES){const n=V(na),axisNormal=Math.abs(n.dot(d))>.9;
+   if(view.piece.id==='roof-block'&&!(na[2]===1))continue;
    // Cap reliefs on joining shell edges would protrude into the neighbouring
    // panel. Use four side surfaces there; the outermost lid also has a top cue.
    if(shell&&axisNormal&&view.piece.id!=='lid')continue;
    const origin=center.clone().addScaledVector(n,4);this.ray.set(origin,n.clone().negate());const hit=this.ray.intersectObjects(view.meshes,false)[0];if(!hit)continue;
    const ink=new THREE.Color(0xffcc62),border=new THREE.Color(0x101f29),p=hit.point.clone().addScaledVector(n,.022);let vertices,faces,tip,tail;
-   if(!axisNormal){const side=new THREE.Vector3().crossVectors(n,d).normalize(),w=length*.12,outline=[[-.5,-1],[.1,-1],[.1,-2.1],[.5,0],[.1,2.1],[.1,1],[-.5,1]];vertices=outline.map(([a,b])=>p.clone().addScaledVector(d,a*length).addScaledVector(side,b*w));faces=THREE.ShapeUtils.triangulateShape(outline.map(([a,b])=>new THREE.Vector2(a,b)),[]);tip=vertices[3];tail=vertices[0].clone().add(vertices[6]).multiplyScalar(.5);
+   if(!axisNormal){const side=new THREE.Vector3().crossVectors(n,d).normalize(),w=length*.17,outline=[[-.5,-1],[.04,-1],[.04,-1.85],[.5,0],[.04,1.85],[.04,1],[-.5,1]];vertices=outline.map(([a,b])=>p.clone().addScaledVector(d,a*length).addScaledVector(side,b*w));faces=THREE.ShapeUtils.triangulateShape(outline.map(([a,b])=>new THREE.Vector2(a,b)),[]);tip=vertices[3];tail=vertices[0].clone().add(vertices[6]).multiplyScalar(.5);
    }else{
     // Actual 3D relief for near-axis views. It points to/from the face rather
     // than inventing a screen-space direction when the projected vector is short.
@@ -88,13 +93,13 @@ export class WorkshopScene {
    // Thin physical outline, anchored to the same surface and depth-tested.
    // Both layers retain the one extraction direction; no screen-space badge.
    const localFacing=n.clone().applyMatrix3(inverseNormal).normalize();
-   for(const [scale,lift,color]of (axisNormal?[[1,0,ink]]:[[1.22,0,border],[1,.005,ink]]))for(const f of faces)for(let i=1;i<f.length-1;i++)for(const k of [f[0],f[i],f[i+1]]){const point=vertices[k].clone();if(!axisNormal)point.sub(p).multiplyScalar(scale).add(p);point.addScaledVector(n,lift);const v=point.applyMatrix4(inv);positions.push(v.x,v.y,v.z);colors.push(color.r,color.g,color.b);facings.push(localFacing.x,localFacing.y,localFacing.z);}
+   for(const [scale,lift,color]of (axisNormal?[[1,0,ink]]:[[1.32,0,new THREE.Color(0xf9eccb)],[1.20,.003,border],[1,.007,ink]]))for(const f of faces)for(let i=1;i<f.length-1;i++)for(const k of [f[0],f[i],f[i+1]]){const point=vertices[k].clone();if(!axisNormal)point.sub(p).multiplyScalar(scale).add(p);point.addScaledVector(n,lift);alongs.push(point.clone().sub(tail).dot(d)/length);const v=point.applyMatrix4(inv);positions.push(v.x,v.y,v.z);colors.push(color.r,color.g,color.b);facings.push(localFacing.x,localFacing.y,localFacing.z);}
    view.marks.push({normal:na,anchor:hit.point.clone().applyMatrix4(inv),tip:tip.clone().applyMatrix4(inv),tail:tail.clone().applyMatrix4(inv),length,outlined:true,vertices:positions.length/3-offset});
   }
-  if(view.marks.length<3)throw Error('Недостаточно закреплённых направлений '+view.piece.id);
-  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.setAttribute('markFacing',new THREE.Float32BufferAttribute(facings,3));
+  if(view.marks.length<(view.piece.id==='roof-block'?1:3))throw Error('Недостаточно закреплённых направлений '+view.piece.id);
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.setAttribute('markFacing',new THREE.Float32BufferAttribute(facings,3));geo.setAttribute('markAlong',new THREE.Float32BufferAttribute(alongs,1));view.pathFree={value:0};
   const material=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide,depthTest:true,toneMapped:false});
-  material.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 markFacing;\nvarying vec3 vMarkFacing;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMarkFacing = normalMatrix * markFacing;');shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMarkFacing;').replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif (normalize(vMarkFacing).z < 0.035) discard;');};material.customProgramCacheKey=()=> 'surface-arrow-facing-v1';
+  material.onBeforeCompile=shader=>{shader.uniforms.pathFree=view.pathFree;shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 markFacing;\nattribute float markAlong;\nvarying vec3 vMarkFacing;\nvarying float vMarkAlong;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMarkFacing = normalMatrix * markFacing;\nvMarkAlong = markAlong;');shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMarkFacing;\nvarying float vMarkAlong;\nuniform float pathFree;').replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif (normalize(vMarkFacing).z < 0.035) discard;').replace('#include <color_fragment>','#include <color_fragment>\nif(diffuseColor.r > 0.85 && diffuseColor.g < 0.72 && diffuseColor.b < 0.30){float stripe=step(0.55,fract(vMarkAlong*9.0));vec3 blocked=vec3(1.0,0.29,0.025)*(1.0-stripe*0.65);diffuseColor.rgb=mix(blocked,vec3(0.015,0.95,0.68),pathFree);}');};material.customProgramCacheKey=()=> 'surface-arrow-path-status-v2';
   const mesh=new THREE.Mesh(geo,material);mesh.userData.piece=view.piece.id;mesh.userData.marking=true;view.group.add(mesh);view.arrowMesh=mesh;this.pickMeshes.push(mesh);
  }
  reset(){this.animation=null;this.path.visible=false;this.selected=null;this.hinted=null;this.flashIds=null;this.active=new Set(this.level.pieces.map(p=>p.id));for(const v of this.views.values()){v.group.visible=true;v.group.position.copy(v.start);}this.resetAngle();this.fitInitialAssembly();}
@@ -108,15 +113,8 @@ export class WorkshopScene {
   this.cameraWidth=Math.max(1.05,Math.hypot(s.x,s.z)*1.18,(maxY-minY)*this.width/this.height*1.18);this.targetWidth=this.cameraWidth;
   this.assetOffset.position.copy(this.center).negate();this.updateCamera();this.root.updateMatrixWorld(true);
  }
- groupComposite(view){
-  // One shared painted service band on the original connected T-lock geometry.
-  // Shader colour only: no new solid mesh, boundary, pivot or extraction rule.
-  const c=view.box.getCenter(new THREE.Vector3()).applyMatrix4(view.group.matrixWorld.clone().invert());
-  for(const {material}of view.materials){if(!/ivory|cream|teal/i.test(material.name))continue;
-   material.onBeforeCompile=shader=>{shader.uniforms.moduleBandY={value:c.y};shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vModulePosition;').replace('#include <begin_vertex>','#include <begin_vertex>\nvModulePosition = position;');shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vModulePosition;\nuniform float moduleBandY;').replace('#include <color_fragment>','#include <color_fragment>\nfloat band = 1.0 - smoothstep(0.040, 0.050, abs(vModulePosition.y-moduleBandY));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.06,0.43,0.43), band*0.94);');};
-   material.customProgramCacheKey=()=> 'shared-composite-band-v1';
-  }view.composite={sections:3,sharedBand:true,onePivot:true};
- }
+ groupComposite(view){if(view.solidSourceCount!==1||view.group.userData.visual_construction!=='ONE_MONOLITHIC_T_CASTING')throw Error('Expected genuine monolithic casting');view.composite={sections:1,monolithic:true,onePivot:true,solidMeshes:view.solidSourceCount};}
+
  select(id){this.selected=id&&this.active.has(id)?id:null;}
  framingAudit(id='roof-block'){
   this.root.updateMatrixWorld(true);const v=this.views.get(id),points=[];
@@ -126,7 +124,7 @@ export class WorkshopScene {
  pick(x,y){const r=this.renderer.domElement.getBoundingClientRect();this.pointer.set((x-r.left)/r.width*2-1,-(y-r.top)/r.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);for(const hit of this.ray.intersectObjects(this.pickMeshes.filter(m=>this.active.has(m.userData.piece)),false)){if(hit.object.userData.marking){const n=new THREE.Vector3().fromBufferAttribute(hit.object.geometry.attributes.markFacing,hit.face.a).applyNormalMatrix(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld));if(n.dot(this.ray.ray.direction.clone().negate())<.035)continue;}return hit.object.userData.piece;}return null;}
  project(point){const p=point.clone().project(this.camera);return{x:(p.x+1)*this.width/2,y:(1-p.y)*this.height/2};}
  marker(id){const v=this.views.get(id);if(!v||!this.active.has(id))return null;
-  const stamp=[this.root.rotation.x.toFixed(4),this.root.rotation.y.toFixed(4),this.cameraWidth.toFixed(2),...this.center.toArray().map(x=>x.toFixed(2)),this.width,this.height,[...this.active].join(',')].join(':');if(this.markerStamp!==stamp){this.markerStamp=stamp;this.markerCache=new Map();}if(this.markerCache.has(id))return this.markerCache.get(id);
+  const stamp=[this.root.rotation.x.toFixed(4),this.root.rotation.y.toFixed(4),this.cameraWidth.toFixed(2),this.manualZoom.toFixed(4),...this.center.toArray().map(x=>x.toFixed(2)),this.width,this.height,[...this.active].join(',')].join(':');if(this.markerStamp!==stamp){this.markerStamp=stamp;this.markerCache=new Map();}if(this.markerCache.has(id))return this.markerCache.get(id);
   this.root.updateMatrixWorld(true);const candidates=v.marks.map(m=>v.group.localToWorld(m.anchor.clone()));const c=v.box.getCenter(new THREE.Vector3()).sub(this.center).applyQuaternion(this.root.quaternion);candidates.push(c);
   const r=this.renderer.domElement.getBoundingClientRect();for(const p of candidates){const point=this.project(p);if(point.x<8||point.x>this.width-8||point.y<8||point.y>this.height-8)continue;if(this.pick(r.left+point.x,r.top+point.y)===id){const value={id,...point};this.markerCache.set(id,value);return value;}}this.markerCache.set(id,null);return null;
  }
@@ -140,7 +138,7 @@ export class WorkshopScene {
   if(this.animation){const a=this.animation,t=Math.min(1,(now-a.start)/a.duration),v=this.views.get(a.id),e=t*t*(3-2*t);v.group.position.copy(a.origin).addScaledVector(V(v.piece.dir),e*this.level.pathDistance);if(t===1){const delta=v.group.position.clone().sub(a.origin);v.group.visible=false;this.active.delete(a.id);this.animation=null;a.callback({distance:delta.length(),dir:[...v.piece.dir],endpointDelta:delta.toArray()});}}
   if(now>this.pathUntil)this.path.visible=false;const start=performance.now();this.renderer.render(this.scene,this.camera);this.renderTimes.push(performance.now()-start);if(this.renderTimes.length>400)this.renderTimes.shift();
  }
- arrowAudit(){this.root.updateMatrixWorld(true);return [...this.views.values()].map(v=>({id:v.piece.id,dir:v.piece.dir,copies:v.marks.length,depthTest:v.arrowMesh.material.depthTest,outline:true,lengths:v.marks.map(m=>m.length),alignment:v.marks.map(m=>{const actual=v.group.localToWorld(m.tip.clone()).sub(v.group.localToWorld(m.tail.clone())).normalize(),expected=V(v.piece.dir).applyQuaternion(this.root.quaternion).normalize();return actual.dot(expected);})}));}
+ arrowAudit(){this.root.updateMatrixWorld(true);return [...this.views.values()].map(v=>({id:v.piece.id,dir:v.piece.dir,copies:v.marks.length,depthTest:v.arrowMesh.material.depthTest,free:this.active.has(v.piece.id)&&this.freeIds.has(v.piece.id),style:this.freeIds.has(v.piece.id)?'cyan-solid':'amber-striped',outline:true,lengths:v.marks.map(m=>m.length),alignment:v.marks.map(m=>{const actual=v.group.localToWorld(m.tip.clone()).sub(v.group.localToWorld(m.tail.clone())).normalize(),expected=V(v.piece.dir).applyQuaternion(this.root.quaternion).normalize();return actual.dot(expected);})}));}
  metrics(){const quant=(v,q)=>{const s=[...v].sort((a,b)=>a-b);return s[Math.floor(s.length*q)]||0;};return{samples:this.frameTimes.length,medianMs:quant(this.frameTimes,.5),p95Ms:quant(this.frameTimes,.95),longFrames:this.frameTimes.filter(t=>t>50).length,cpuRenderP95Ms:quant(this.renderTimes,.95),drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,geometries:this.renderer.info.memory.geometries,textures:this.renderer.info.memory.textures,pixelRatio:this.renderer.getPixelRatio()};}
  geometryAudit(){return{assetSHA256:this.assetSHA256,parts:this.level?.pieces.length,optimization:this.optimization,physics:this.qaProof};}
 }
