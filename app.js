@@ -94,7 +94,7 @@ function attempt(id){
 }
 async function loadOrder(index,{keepSplash=false}={}){
  ready=false;orderIndex=index;level=library[index];generation++;puzzle=null;gesture.reset();lesson=null;$('guide-hand').hidden=true;$('skip-tutorial').hidden=true;view.setTutorialFocus(null);
- if(!keepSplash)openWorkshop('hub',{jobIndex:index});$('start-job').disabled=true;$('start-job').textContent='Готовим стенд…';
+ if(!keepSplash)openWorkshop('hub',{jobIndex:index});if(META_PAGES.includes(mode))metaUI.render();else{$('start-job').disabled=true;$('start-job').textContent='Готовим стенд…';}
  document.querySelector('.job-heading .eyebrow').textContent='ЗАКАЗ '+String(index+1).padStart(3,'0')+' · '+(index===0?'ПЕРВАЯ СМЕНА':'БЛОЧНАЯ СБОРКА');
  await view.load(level,{qa,progress:p=>{$('load-bar').style.width=Math.round(p*100)+'%';$('load-caption').textContent=p<.9?'Подключаем мастерскую…':'Почти готовы. Чайник уже подозревает.';}});
  ready=true;$('counter').textContent='0/'+level.pieces.length;$('start-job').disabled=false;$('start-job').textContent='Принять заказ →';$('load-caption').textContent='';zoomControls();$('qa-status').textContent=JSON.stringify(view.geometryAudit(),null,2);record('asset-ready',view.geometryAudit());if(META_PAGES.includes(mode))metaUI.render();if(pendingJob!==null&&!launchRunning)queueMicrotask(()=>launchJob(pendingJob));
