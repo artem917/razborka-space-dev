@@ -1,0 +1,7 @@
+import {MODEL_DELIVERY} from './model-delivery-manifest.js';
+import {inkSHA} from './surface-ink-contract.js';
+let pending;
+// A lossless transport representation only. WorkshopScene, GLB contents and
+// the native certificate remain unchanged, including its independent SHA check.
+export function deliveredModel(){if(!pending)pending=(async()=>{const r=await fetch(new URL('./assets/teapot.glb.gz',import.meta.url));if(!r.ok)throw Error('Не удалось загрузить модель');const zip=await r.arrayBuffer();if(zip.byteLength!==MODEL_DELIVERY.gzipBytes||await inkSHA(zip)!==MODEL_DELIVERY.gzipSHA256)throw Error('SHA транспорта модели не совпадает');const bytes=await new Response(new Blob([zip]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();if(bytes.byteLength!==MODEL_DELIVERY.rawBytes||await inkSHA(bytes)!==MODEL_DELIVERY.rawSHA256)throw Error('Исходная геометрия модели изменилась');return bytes;})().catch(e=>{pending=null;throw e;});return pending;}
+export async function loadDelivered(view,level,options){if(view.cachedFamily?.digest===level.assetSHA256)return view.load(level,options);const bytes=await deliveredModel();if(level.assetSHA256!==MODEL_DELIVERY.rawSHA256)throw Error('Модель не соответствует сертификату');const url=URL.createObjectURL(new Blob([bytes],{type:'model/gltf-binary'}));try{return await view.load({...level,asset:url},options);}finally{URL.revokeObjectURL(url);pending=null;}}

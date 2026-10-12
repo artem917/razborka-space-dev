@@ -17,5 +17,5 @@ export const INVENTIONS=[
  ['Ускоритель метеоритов','Метеорит попросил отпуск.'],
  ['Домашняя чёрная дыра','Пропала инструкция. И отдел кадров.']
 ].map(([name,joke],i)=>Object.freeze({id:i+1,name,joke,chapter:Math.floor(i/5),playable:i===0,status:i===0?'На стенде':'Концепт · заказ в пути',sprite:[i%5,Math.floor(i/5)]}));
-export const JOBS=[{id:'intro',title:'Первый допуск',parts:12,description:'Первая разборка. Единственное термоядро для корабля.'},{id:'work',title:'Повторная инспекция',parts:15,description:'Тот же чайник. Больше внутренних деталей.'},{id:'turn',title:'Слепые зоны',parts:18,description:'Тот же чайник. Для разборки потребуется вращение.'}];
+export const JOBS=[{id:'intro',title:'Первая веха',parts:12,campaign:true,description:'Один чайник. Одно уникальное термоядро для корабля.'},{id:'work',title:'Повторная инспекция',parts:15,campaign:false,description:'Необязательное испытание. Повторная добыча ядра не предусмотрена.'},{id:'turn',title:'Слепые зоны',parts:18,campaign:false,description:'Необязательное испытание с вращением. Не требуется для истории.'}];
 export const SECTORS=[{id:1,name:'Бытовые катастрофы',active:true,x:22,y:37},{id:2,name:'Галактический сервис',active:false,x:54,y:22},{id:3,name:'Запрещённые технологии',active:false,x:81,y:26},{id:4,name:'Сектор 4',active:false,x:29,y:77},{id:5,name:'Сектор 5',active:false,x:68,y:73}];
