@@ -4,7 +4,8 @@ import { mergeGeometries } from './vendor/utils/BufferGeometryUtils.js';
 import {StageScale} from './stage-scale.js';
 import {clampZoom} from './view-input.js';
 import {metalInk,pointAtUV} from './surface-marks.js';
-import {surfaceInk,INK_SAMPLES} from './surface-ink.js';
+import {INK_SAMPLES} from './surface-ink.js';
+import {loadInkCache,prepareInkCache,cachedSurfaceInk} from './surface-ink-cache.js';
 const V=a=>new THREE.Vector3(...a),AXES=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
 export class WorkshopScene {
  constructor(host){
@@ -37,6 +38,7 @@ export class WorkshopScene {
   bytes=new Uint8Array(n);let cursor=0;for(const c of chunks){bytes.set(c,cursor);cursor+=c.length;}
   digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');if(digest!==level.assetSHA256)throw Error('Модель не соответствует проверенной геометрии');
   const gltf=await new GLTFLoader().parseAsync(bytes.buffer,'');this.cachedFamily={bytes,digest,scene:gltf.scene};}
+  const inkReady=loadInkCache().then(cache=>({cache}),error=>({error}));
   this.model=this.cachedFamily.scene.clone(true);this.model.updateMatrixWorld(true);
   const selected=new Set(level.pieces.map(p=>p.node||p.id));for(const child of [...this.model.children])if(!selected.has(child.name))child.removeFromParent();
   const collisionParts=[];let originalMeshes=0,mergedMeshes=0;
@@ -64,13 +66,15 @@ export class WorkshopScene {
   // Browser QA checks the actual optimized DRAW geometry, not only the raw
   // loader buffers. Paint/arrow markings remain surface ink, not solid bodies.
   for(let n=0;n<level.pieces.length;n++){const p=level.pieces[n],v=this.views.get(p.id),points=[],box=new THREE.Box3();for(const mesh of v.meshes){if(mesh.userData.decal_surface)continue;const attr=mesh.geometry.attributes.position;for(let i=0;i<attr.count;i++){const point=new THREE.Vector3().fromBufferAttribute(attr,i).applyMatrix4(mesh.matrixWorld);points.push(point.x,point.y,point.z);box.expandByPoint(point);}}if(points.length!==collisionParts[n].triangles.length)throw Error('Оптимизация потеряла треугольники');for(let i=0;i<3;i++)if(Math.abs(box.min.getComponent(i)-p.bounds.min[i])>2e-5||Math.abs(box.max.getComponent(i)-p.bounds.max[i])>2e-5)throw Error('Оптимизация изменила габариты');collisionParts[n].triangles=new Float64Array(points);}
+  const inkResult=await inkReady;if(inkResult.error)throw inkResult.error;
+  this.inkCache=await prepareInkCache(inkResult.cache,level,this.views);
   for(const v of this.views.values())this.makeArrows(v);
   this.assetOffset.add(this.model);this.assetSHA256=digest;this.optimization={originalMeshes,mergedMeshes,parts:level.pieces.length,geometryChanged:false};progress(.9);
   if(qa){this.qaProof=await this.verifyMeshGraph(collisionParts,progress);}else this.qaProof={mode:'SHA-bound native continuous-mesh certificate',graphVerified:true,sourceSHA256:digest};
   this.reset();progress(1);return this;
  }
  verifyMeshGraph(parts,progress){return new Promise((resolve,reject)=>{const worker=new Worker(new URL('./physics-worker.js',import.meta.url),{type:'module'});worker.onerror=e=>{worker.terminate();reject(Error(e.message));};worker.onmessage=({data})=>{if(data.progress!==undefined){progress(.90+data.progress*.1);return;}worker.terminate();if(data.error){reject(Error(data.error));return;}for(const p of this.level.pieces){if(JSON.stringify(data.graph[p.id].sort())!==JSON.stringify(p.pathBlockers.map(b=>b.id).sort())){reject(Error('Браузерный mesh solver расходится с Blender: '+p.id));return;}}resolve({mode:'browser continuous triangle SAT',graphVerified:true,pairs:data.pairs,milliseconds:data.milliseconds,graph:data.graph});};worker.postMessage({parts},parts.map(p=>p.triangles.buffer));});}
- makeArrows(view){this.pickMeshes.push(surfaceInk(view,this.ray,this.inkMaterial));}
+ makeArrows(view){this.pickMeshes.push(cachedSurfaceInk(view,this.inkMaterial,this.inkCache,this.level.id));}
  unload(){this.animation=null;this.inkStamp=null;this.tapStamp=null;this.markerStamp=null;this.markerCache=new Map();for(const v of this.views.values()){for(const m of v.meshes){m.geometry.dispose();m.material.dispose();}v.arrowMesh?.geometry.dispose();v.arrowMesh?.material.dispose();}this.model?.removeFromParent();this.views.clear();this.pickMeshes=[];this.active.clear();this.tutorialFocus=null;}
 
  reset(){this.stageScale.reset();this.enterStage('shell');this.animation=null;this.inkStamp=null;this.path.visible=false;this.selected=null;this.hinted=null;this.tutorialFocus=null;this.flashIds=null;this.active=new Set(this.level.pieces.map(p=>p.id));for(const v of this.views.values()){v.group.visible=true;v.group.position.copy(v.start);}this.resetAngle();this.fitInitialAssembly();}
