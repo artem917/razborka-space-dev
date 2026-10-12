@@ -36,3 +36,136 @@
 .meta-header{background:linear-gradient(#0d2028f5,#0d2028e6);border-radius:8px}.meta-world[data-page=galaxy] .meta-header{background:#07152dba}.meta-world[data-page=hub] .ship-preview .zone-name{bottom:auto;top:-25px}.victory-card #win-hub[hidden]+#next-order{width:100%}
 /* Labels may protrude upward; floor remains bounded inside the clipped room. */
 .world-ship-zone{overflow:visible}
+
+/* Recovery: the room is the hub. Header/status share a light overlay; every
+   entrance and the inspector belong to the scene's coordinate system. */
+.meta-world[data-page=hub] .bay-floor{display:none}
+.meta-world[data-page=hub] .stand-hit{left:1%;top:57%;width:28%;height:24%;z-index:2}
+.meta-world[data-page=hub] .stand-teapot{padding:0;border:0;background-color:transparent;cursor:pointer}
+.meta-world[data-page=hub] .stand-teapot:hover,.meta-world[data-page=hub] .stand-teapot:focus-visible{filter:drop-shadow(0 0 6px #f8c269)}
+body:is([data-screen=splash],[data-screen=hub],[data-screen=ship],[data-screen=catalogue],[data-screen=galaxy],[data-screen=concept]){background-image:none;background-color:#0b2029}
+.splash{background:linear-gradient(#07192340,#07192395),url('./assets/world-hub-wide.webp') center/cover no-repeat}
+.stand-teapot{background-image:url('./assets/hub-teapot.webp');background-size:contain;background-position:center;background-repeat:no-repeat}
+.ship-preview picture,.ship-preview picture img{display:block;width:100%}
+.help-close{display:none}
+.meta-world[data-page=hub]{overflow:hidden}
+.meta-world[data-page=hub] .meta-shell{max-width:none;width:100%;height:100dvh;min-height:0;padding:0;display:block}
+.meta-world[data-page=hub] .meta-header{position:absolute;inset:0 0 auto;z-index:8;height:82px;padding:max(10px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right));border-radius:0;background:linear-gradient(#071721ed,#071721a0,transparent)}
+.meta-world[data-page=hub] .meta-brand{width:180px;margin-right:auto}
+.meta-world[data-page=hub] .hangar-stamp,.meta-world[data-page=hub] .meta-heading{display:none}
+.meta-world[data-page=hub] .world-status{position:absolute;z-index:9;left:240px;right:156px;top:max(15px,env(safe-area-inset-top));display:flex;height:52px;min-height:0;padding:0;gap:24px;background:none;border:0;border-radius:0;box-shadow:none;pointer-events:none}
+.meta-world[data-page=hub] .world-status:before,.meta-world[data-page=hub] .world-status:after,.meta-world[data-page=hub] .world-status>button{display:none}
+.meta-world[data-page=hub] .objective{max-width:440px;gap:2px;text-shadow:0 2px 5px #071721}
+.meta-world[data-page=hub] .objective small{font-size:8px;margin:0}
+.meta-world[data-page=hub] .objective strong{font-size:15px;line-height:1.2}
+.meta-world[data-page=hub] .objective>span{font-size:11px;line-height:1.25}
+.meta-world[data-page=hub] .status-readout{margin-left:auto;text-shadow:0 2px 5px #071721}
+.meta-world[data-page=hub] .status-readout .core-symbol{width:32px;height:32px}
+.meta-world[data-page=hub] .status-readout strong{font-size:13px}
+.meta-world[data-page=hub] .status-readout span{font-size:11px}
+.meta-world[data-page=hub] .meta-stage,.meta-world[data-page=hub] .hub-view{position:absolute;inset:0;min-height:0}
+.meta-world[data-page=hub] .world-scene{width:100%;height:100%;margin:0;aspect-ratio:auto;border-radius:0}
+.meta-world[data-page=hub] .world-backdrop img{object-position:50% 50%}
+.meta-world[data-page=hub] .world-ship-zone{left:31%;top:39%;width:59%;padding-bottom:18px}
+.meta-world[data-page=hub] .ship-preview{padding-bottom:38px}
+.meta-world[data-page=hub] .ship-preview .zone-name{top:auto;bottom:0;left:45%}
+.meta-world[data-page=hub] .archive-zone{left:15%;top:31%;width:17%;height:30%}
+.meta-world[data-page=hub] .galaxy-zone{right:1.5%;top:34%;width:20%;height:31%}
+.meta-world[data-page=hub] .zone-name{background:#102e37e8;border-width:1px;font-size:14px;padding:9px 13px}
+.meta-world[data-page=hub] .zone-signal{top:48%}
+.meta-world[data-page=hub] .stand-zone{left:3.5%;bottom:5%;width:25%;max-width:360px;gap:5px}
+.meta-world[data-page=hub] .stand-teapot{width:30%;margin-left:28%;box-shadow:none;filter:drop-shadow(0 6px 5px #04141ba0);border-radius:12px}
+.meta-world[data-page=hub] .stand-ticket{padding:9px 13px;background:#102e37e8;border:1px solid #a48b5d;color:#f3deaf;box-shadow:0 3px 8px #0006;gap:3px}
+.meta-world[data-page=hub] .stand-ticket small{font-size:9px;color:#8be0d4;line-height:1.3}
+.meta-world[data-page=hub] .stand-ticket strong{font-size:18px;line-height:1.2}
+.meta-world[data-page=hub] .stand-ticket>span{font-size:10px;line-height:1.25}
+.meta-world[data-page=hub] .stand-zone .primary{min-height:50px;font-size:14px;padding:8px 10px}
+.meta-world[data-page=hub] .meta-brakych{position:absolute;right:3%;bottom:4%;width:14%;max-width:205px;display:block;margin:0}
+.meta-world[data-page=hub] .brakych-world-character{width:100%;min-width:44px}
+.meta-world[data-page=hub] .brakych-world-character span{font-size:11px;min-height:36px;display:grid;place-items:center;background:#102e37e8;border-color:#a48b5d}
+.meta-world[data-page=hub] .meta-brakych .speech-bubble{position:absolute;right:80%;bottom:40%;width:340px;height:172px;min-height:0;padding:32px 43px;z-index:2}
+.meta-world[data-page=hub] .meta-brakych .speech-bubble p:not(.eyebrow){font-size:14px!important;line-height:1.4}
+.meta-world[data-page=hub] .meta-brakych .speech-bubble>p{width:80%;align-self:center}
+.meta-world[data-page=hub] .meta-brakych .speech-bubble .eyebrow{font-size:8px!important;letter-spacing:.5px;line-height:1.3}
+.meta-world[data-page=hub]:not([data-help-open=true]) .meta-brakych .speech-bubble,.meta-world[data-page=hub]:not([data-help-open=true]) .help-close{display:none}
+.meta-world[data-page=hub] .help-close{display:grid;place-items:center;position:absolute;right:calc(80% + 12px);bottom:calc(40% + 120px);width:44px;height:44px;border:1px solid #a48b5d;border-radius:50%;background:#f8e6c6;color:#193138;font:22px/1 Arial,sans-serif;z-index:4;pointer-events:auto}
+@media(max-width:600px) and (orientation:portrait){
+ .splash{background-image:linear-gradient(#07192340,#07192395),url('./assets/world-hub-mobile.webp')}
+ .meta-world[data-page=hub] .meta-header{height:52px;padding:max(6px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right));gap:7px}
+ .meta-world[data-page=hub] .meta-brand{width:128px}
+ .meta-world[data-page=hub] .meta-header .icon,.meta-world[data-page=hub] .world-recovery summary{width:40px;height:40px;min-height:40px}
+ .meta-world[data-page=hub] .world-status{left:10px;right:10px;top:54px;height:54px;display:flex;gap:8px}
+ .meta-world[data-page=hub] .objective{max-width:64%;gap:2px}
+ .meta-world[data-page=hub] .objective small{display:none}
+ .meta-world[data-page=hub] .objective strong{font-size:12px;line-height:1.25}
+ .meta-world[data-page=hub] .objective>span{font-size:10px;line-height:1.25}
+ .meta-world[data-page=hub] .status-readout{gap:3px}
+ .meta-world[data-page=hub] .status-readout .core-symbol{width:23px;height:27px}
+ .meta-world[data-page=hub] .status-readout>div{gap:3px}
+ .meta-world[data-page=hub] .status-readout strong{font-size:11px;white-space:nowrap}
+ .meta-world[data-page=hub] .status-readout span{font-size:8px;white-space:nowrap}
+ .meta-world[data-page=hub] .meta-stage{top:108px}
+ .meta-world[data-page=hub] .world-backdrop img{object-position:50% 45%}
+ .meta-world[data-page=hub] .archive-zone{left:3%;top:21%;width:29%;height:24%}
+ .meta-world[data-page=hub] .stand-hit{left:1%;top:63%;width:35%;height:18%}
+ .meta-world[data-page=hub] .galaxy-zone{right:1%;top:22%;width:29%;height:28%}
+ .meta-world[data-page=hub] .world-ship-zone{left:3%;top:38%;width:94%;padding-bottom:16px}
+ .meta-world[data-page=hub] .ship-preview{padding-bottom:32px}
+ .meta-world[data-page=hub] .ship-preview .zone-name{left:49%;bottom:0}
+ .meta-world[data-page=hub] .zone-name{font-size:11px;padding:7px 9px}
+ .meta-world[data-page=hub] .stand-zone{left:3%;bottom:3%;width:57%;max-width:270px;gap:4px}
+ .meta-world[data-page=hub] .stand-teapot{width:29%;margin-left:20%}
+ .meta-world[data-page=hub] .stand-ticket{padding:7px 9px;gap:2px}
+ .meta-world[data-page=hub] .stand-ticket small{font-size:7px}
+ .meta-world[data-page=hub] .stand-ticket strong{font-size:13px}
+ .meta-world[data-page=hub] .stand-ticket>span{font-size:9px}
+ .meta-world[data-page=hub] .stand-zone .primary{font-size:11px;min-height:44px;padding:7px 6px;letter-spacing:.3px}
+ .meta-world[data-page=hub] .meta-brakych{right:3%;bottom:3%;width:27%;max-width:125px}
+ .meta-world[data-page=hub] .brakych-world-character span{font-size:9px;min-height:44px}
+ .meta-world[data-page=hub] .meta-brakych .speech-bubble{right:35%;bottom:70%;width:240px;height:160px;padding:30px 34px}
+ .meta-world[data-page=hub] .help-close{right:calc(35% + 12px);bottom:calc(70% + 108px)}
+ .meta-world[data-page=hub] .meta-brakych .speech-bubble p:not(.eyebrow){font-size:12px!important;line-height:1.35}
+ .meta-world[data-page=hub] .meta-brakych .speech-bubble>p{width:100%;align-self:auto}
+ .meta-world[data-page=hub] .meta-brakych .speech-bubble p.eyebrow{font-size:7px!important;line-height:1.3;margin-bottom:4px}
+}
+@media(min-width:601px) and (max-width:900px) and (orientation:portrait){
+ .splash{background-image:linear-gradient(#07192340,#07192395),url('./assets/world-hub-portrait.webp')}
+ .meta-world[data-page=hub] .meta-header{height:70px;padding:10px 18px}
+ .meta-world[data-page=hub] .meta-brand{width:155px}
+ .meta-world[data-page=hub] .world-status{left:190px;right:135px;top:12px;gap:12px}
+ .meta-world[data-page=hub] .objective strong{font-size:13px}
+ .meta-world[data-page=hub] .objective>span{font-size:10px}
+ .meta-world[data-page=hub] .status-readout span{font-size:9px}
+ .meta-world[data-page=hub] .meta-stage{top:70px}
+ .meta-world[data-page=hub] .archive-zone{left:5%;top:15%;width:27%;height:26%}
+ .meta-world[data-page=hub] .stand-hit{left:1%;top:57%;width:35%;height:20%}
+ .meta-world[data-page=hub] .galaxy-zone{right:2%;top:17%;width:27%;height:27%}
+ .meta-world[data-page=hub] .world-ship-zone{left:6%;top:34%;width:88%}
+ .meta-world[data-page=hub] .stand-zone{width:44%;max-width:350px;bottom:5%}
+ .meta-world[data-page=hub] .meta-brakych{width:21%;max-width:180px;bottom:5%}
+ .meta-world[data-page=hub] .meta-brakych .speech-bubble{width:320px;height:170px;padding:32px 43px}
+}
+@media(max-width:360px) and (orientation:portrait){
+ .meta-world[data-page=hub] .objective strong{font-size:11px}
+ .meta-world[data-page=hub] .stand-ticket strong{font-size:12px}
+ .meta-world[data-page=hub] .stand-ticket>span{font-size:8px}
+ .meta-world[data-page=hub] .stand-zone .primary{font-size:10px}
+ .meta-world[data-page=hub] .meta-brakych .speech-bubble{width:216px}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .meta-world[data-page=hub] .meta-header{height:56px;padding:6px 14px}
+ .meta-world[data-page=hub] .meta-brand{width:120px}
+ .meta-world[data-page=hub] .world-status{left:160px;right:130px;top:8px;height:40px}
+ .meta-world[data-page=hub] .objective>span,.meta-world[data-page=hub] .objective small{display:none}
+ .meta-world[data-page=hub] .stand-zone{width:27%;bottom:4%}
+ .meta-world[data-page=hub] .stand-teapot{width:20%}
+ .meta-world[data-page=hub] .stand-ticket strong{font-size:12px}
+ .meta-world[data-page=hub] .stand-ticket>span{font-size:8px}
+ .meta-world[data-page=hub] .stand-zone .primary{font-size:10px;min-height:44px}
+ .meta-world[data-page=hub] .world-ship-zone{top:27%;width:54%}
+ .meta-world[data-page=hub] .zone-name{font-size:11px;padding:6px 9px}
+ .meta-world[data-page=hub] .meta-brakych{width:12%;bottom:4%}
+ .meta-world[data-page=hub] .meta-brakych .speech-bubble{width:250px;height:140px;padding:26px 34px}
+ .meta-world[data-page=hub] .help-close{bottom:calc(40% + 88px)}
+ .meta-world[data-page=hub] .meta-brakych .speech-bubble p:not(.eyebrow){font-size:12px!important}
+}
