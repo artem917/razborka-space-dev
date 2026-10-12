@@ -5,22 +5,29 @@ import {StageScale} from './stage-scale.js';
 import {clampZoom} from './view-input.js';
 import {metalInk,pointAtUV} from './surface-marks.js';
 import {INK_SAMPLES} from './surface-ink.js';
-import {loadInkCache,prepareInkCache,cachedSurfaceInk} from './surface-ink-cache.js';
+import {loadInkCache,prepareInkCache,cachedSurfaceInk} from './surface-ink-cache.js?v=android-readiness-v1';
+import {loadTrace,loadBytes} from './load-trace.js?v=android-readiness-v1';
 const V=a=>new THREE.Vector3(...a),AXES=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+function prepareEnvironment(renderer){
+  const env=document.createElement('canvas');env.width=512;env.height=256;const ctx=env.getContext('2d'),g=ctx.createLinearGradient(0,0,0,256);g.addColorStop(0,'#b9d4d9');g.addColorStop(.45,'#506978');g.addColorStop(.7,'#182934');g.addColorStop(1,'#161c24');ctx.fillStyle=g;ctx.fillRect(0,0,512,256);ctx.fillStyle='#fff4d9';ctx.fillRect(80,25,55,95);ctx.fillStyle='#659da9';ctx.fillRect(355,50,50,100);
+  const tex=new THREE.CanvasTexture(env);tex.mapping=THREE.EquirectangularReflectionMapping;tex.colorSpace=THREE.SRGBColorSpace;const pm=new THREE.PMREMGenerator(renderer);const environment=pm.fromEquirectangular(tex);tex.dispose();pm.dispose();return environment;
+}
+export async function createWorkshopScene(host,{task}){let renderer,environment;try{renderer=await task.run('webgl-renderer',async()=>{await task.paint();return new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.setClearColor(0x0a1b24,0);environment=await task.run('environment',async()=>{await task.paint();return prepareEnvironment(renderer);});return new WorkshopScene(host,{task,renderer,environment});}catch(e){environment?.dispose();renderer?.dispose();renderer?.forceContextLoss();renderer?.domElement.remove();throw e;}}
 export class WorkshopScene {
- constructor(host){
+ constructor(host,{task,renderer,environment}={}){
   this.host=host;this.views=new Map();this.active=new Set();this.pickMeshes=[];this.frameTimes=[];this.renderTimes=[];this.animation=null;this.hinted=null;this.frameCount=0;this.qaProof=null;this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.05;this.renderer.setClearColor(0x0a1b24,0);host.append(this.renderer.domElement);
+  this.renderer=renderer||new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.05;this.renderer.setClearColor(0x0a1b24,0);host.append(this.renderer.domElement);
+  try{
   this.renderer.domElement.setAttribute('aria-label','Реактивный чайник — настоящая 3D-разборка');
   this.scene=new THREE.Scene();this.camera=new THREE.OrthographicCamera(-2.4,2.4,2.4,-2.4,.1,60);this.camera.position.set(0,0,12);this.camera.lookAt(0,0,0);
   this.root=new THREE.Group();this.assetOffset=new THREE.Group();this.root.add(this.assetOffset);this.scene.add(this.root);
   this.scene.add(new THREE.HemisphereLight(0xc4edf0,0x283136,2.0));
   for(const[p,c,i]of[[[-4,6,7],0xffdfb3,3.7],[[4,2,-4],0x63cad8,3.0],[[3,0,6],0xd8e6ff,.8]]){const l=new THREE.DirectionalLight(c,i);l.position.fromArray(p);this.scene.add(l);}
-  const env=document.createElement('canvas');env.width=512;env.height=256;const ctx=env.getContext('2d'),g=ctx.createLinearGradient(0,0,0,256);g.addColorStop(0,'#b9d4d9');g.addColorStop(.45,'#506978');g.addColorStop(.7,'#182934');g.addColorStop(1,'#161c24');ctx.fillStyle=g;ctx.fillRect(0,0,512,256);ctx.fillStyle='#fff4d9';ctx.fillRect(80,25,55,95);ctx.fillStyle='#659da9';ctx.fillRect(355,50,50,100);
-  const tex=new THREE.CanvasTexture(env);tex.mapping=THREE.EquirectangularReflectionMapping;tex.colorSpace=THREE.SRGBColorSpace;const pm=new THREE.PMREMGenerator(this.renderer);this.environment=pm.fromEquirectangular(tex);this.scene.environment=this.environment.texture;tex.dispose();pm.dispose();
+  this.environment=environment||prepareEnvironment(this.renderer);this.scene.environment=this.environment.texture;
   this.ray=new THREE.Raycaster();this.pointer=new THREE.Vector2();this.center=new THREE.Vector3(0,1.65,.08);this.targetCenter=this.center.clone();this.cameraWidth=4.5;this.targetWidth=4.5;this.manualZoom=1;this.stageScale=new StageScale();this.inkMaterial=metalInk();
   this.path=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x74f2d3,transparent:true,opacity:.65}));this.root.add(this.path);this.path.visible=false;
-  new ResizeObserver(()=>this.resize()).observe(host);this.resetAngle();this.resize();this.tick=this.tick.bind(this);this.raf=requestAnimationFrame(this.tick);
+  this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(host);this.resetAngle();this.resize();this.tick=this.tick.bind(this);this.raf=requestAnimationFrame(this.tick);
+  }catch(e){this.renderer.dispose();this.renderer.forceContextLoss();this.renderer.domElement.remove();throw e;}
  }
  resize(){this.width=Math.max(1,this.host.clientWidth);this.height=Math.max(1,this.host.clientHeight);this.renderer.setSize(this.width,this.height,false);if(this.views.size)this.fitInitialAssembly();this.stageScale.viewport(this.isMobile());this.camera.zoom=this.manualZoom*this.stageScale.preset;this.updateCamera();}
  updateCamera(){const half=this.cameraWidth/2,h=half*this.height/this.width;Object.assign(this.camera,{left:-half,right:half,top:h,bottom:-h});this.camera.updateProjectionMatrix();}
@@ -29,16 +36,19 @@ export class WorkshopScene {
  enterStage(stage){if(!this.stageScale.enter(stage,this.isMobile()))return false;this.fitInitialAssembly();this.setZoom(this.manualZoom);return true;}
  resetAngle(){this.root.rotation.set(.22,-.45,0);}
  rotate(dx,dy){this.root.rotation.y+=dx*.009;this.root.rotation.x=THREE.MathUtils.clamp(this.root.rotation.x+dy*.009,-1.5,1.5);this.root.updateMatrixWorld(true);}
- async load(level,{qa=false,progress=()=>{}}={}){
+ async load(level,{qa=false,progress=()=>{},task,retry=false}={}){
+  const check=()=>task?.check(),run=(name,fn)=>task?task.run(name,fn):fn();let geometryMark;try{check();
   this.unload();this.level=level;let bytes,digest;
   if(this.cachedFamily?.digest===level.assetSHA256){bytes=this.cachedFamily.bytes;digest=this.cachedFamily.digest;progress(.82);}else{
+  if(task){bytes=new Uint8Array(await loadBytes(new URL(level.asset,document.baseURI),task,'glb-original-read',{retry}));progress(.82);}else{
   const response=await fetch(new URL(level.asset,document.baseURI));if(!response.ok)throw Error('Не удалось получить чайник');
   const total=Number(response.headers.get('content-length'))||8626416,reader=response.body.getReader(),chunks=[];let n=0;
   for(;;){const r=await reader.read();if(r.done)break;chunks.push(r.value);n+=r.value.length;progress(Math.min(.82,n/total*.82));}
-  bytes=new Uint8Array(n);let cursor=0;for(const c of chunks){bytes.set(c,cursor);cursor+=c.length;}
-  digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');if(digest!==level.assetSHA256)throw Error('Модель не соответствует проверенной геометрии');
-  const gltf=await new GLTFLoader().parseAsync(bytes.buffer,'');this.cachedFamily={bytes,digest,scene:gltf.scene};}
-  const inkReady=loadInkCache().then(cache=>({cache}),error=>({error}));
+  bytes=new Uint8Array(n);let cursor=0;for(const c of chunks){bytes.set(c,cursor);cursor+=c.length;}}
+  check();await run('glb-scene-sha',async()=>{digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');if(digest!==level.assetSHA256)throw Error('Модель не соответствует проверенной геометрии');});
+  const gltf=await run('gltf-parse',async()=>{await task?.paint();return new GLTFLoader().parseAsync(bytes.buffer,'');});check();this.cachedFamily={bytes,digest,scene:gltf.scene};}
+  const inkReady=run('ink-load',()=>loadInkCache({task,retry})).then(cache=>({cache}),error=>({error}));
+  geometryMark=loadTrace.begin('geometry',{pieces:level.pieces.length});await task?.paint();check();
   this.model=this.cachedFamily.scene.clone(true);this.model.updateMatrixWorld(true);
   const selected=new Set(level.pieces.map(p=>p.node||p.id));for(const child of [...this.model.children])if(!selected.has(child.name))child.removeFromParent();
   const collisionParts=[];let originalMeshes=0,mergedMeshes=0;
@@ -60,21 +70,24 @@ export class WorkshopScene {
    for(const m of sources)m.removeFromParent();const materials=[],meshes=[];
    for(const b of buckets.values()){const geo=mergeGeometries(b.geometries,false);if(!geo)throw Error('Ошибка объединения геометрии');const material=b.material.clone();if(b.paint){material.polygonOffset=true;material.polygonOffsetFactor=-1;material.polygonOffsetUnits=-1;}const m=new THREE.Mesh(geo,material);m.userData.piece=piece.id;m.userData.decal_surface=b.paint;group.add(m);meshes.push(m);this.pickMeshes.push(m);materials.push({material,color:material.color?.clone(),emissive:material.emissive?.clone(),intensity:material.emissiveIntensity});mergedMeshes++;for(const g of b.geometries)g.dispose();}
    this.views.set(piece.id,{piece,group,meshes,materials,start:group.position.clone(),box:worldBox,solidSourceCount:sources.filter(m=>!m.userData.decal_surface).length,marks:[]});
-   
+   await task?.yield();check();
   }
   this.model.updateMatrixWorld(true);
   // Browser QA checks the actual optimized DRAW geometry, not only the raw
   // loader buffers. Paint/arrow markings remain surface ink, not solid bodies.
-  for(let n=0;n<level.pieces.length;n++){const p=level.pieces[n],v=this.views.get(p.id),points=[],box=new THREE.Box3();for(const mesh of v.meshes){if(mesh.userData.decal_surface)continue;const attr=mesh.geometry.attributes.position;for(let i=0;i<attr.count;i++){const point=new THREE.Vector3().fromBufferAttribute(attr,i).applyMatrix4(mesh.matrixWorld);points.push(point.x,point.y,point.z);box.expandByPoint(point);}}if(points.length!==collisionParts[n].triangles.length)throw Error('Оптимизация потеряла треугольники');for(let i=0;i<3;i++)if(Math.abs(box.min.getComponent(i)-p.bounds.min[i])>2e-5||Math.abs(box.max.getComponent(i)-p.bounds.max[i])>2e-5)throw Error('Оптимизация изменила габариты');collisionParts[n].triangles=new Float64Array(points);}
-  const inkResult=await inkReady;if(inkResult.error)throw inkResult.error;
-  this.inkCache=await prepareInkCache(inkResult.cache,level,this.views);
-  for(const v of this.views.values())this.makeArrows(v);
+  for(let n=0;n<level.pieces.length;n++){const p=level.pieces[n],v=this.views.get(p.id),points=[],box=new THREE.Box3();for(const mesh of v.meshes){if(mesh.userData.decal_surface)continue;const attr=mesh.geometry.attributes.position;for(let i=0;i<attr.count;i++){const point=new THREE.Vector3().fromBufferAttribute(attr,i).applyMatrix4(mesh.matrixWorld);points.push(point.x,point.y,point.z);box.expandByPoint(point);}}if(points.length!==collisionParts[n].triangles.length)throw Error('Оптимизация потеряла треугольники');for(let i=0;i<3;i++)if(Math.abs(box.min.getComponent(i)-p.bounds.min[i])>2e-5||Math.abs(box.max.getComponent(i)-p.bounds.max[i])>2e-5)throw Error('Оптимизация изменила габариты');collisionParts[n].triangles=new Float64Array(points);await task?.yield();check();}
+  loadTrace.end(geometryMark,'PASS');
+  const inkResult=await inkReady;check();if(inkResult.error)throw inkResult.error;
+  this.inkCache=await run('ink-prepare',async()=>{await task?.paint();return prepareInkCache(inkResult.cache,level,this.views);});check();
+  await run('ink-install',async()=>{for(const v of this.views.values()){this.makeArrows(v);await task?.yield();check();}});
   this.assetOffset.add(this.model);this.assetSHA256=digest;this.optimization={originalMeshes,mergedMeshes,parts:level.pieces.length,geometryChanged:false};progress(.9);
   if(qa){this.qaProof=await this.verifyMeshGraph(collisionParts,progress);}else this.qaProof={mode:'SHA-bound native continuous-mesh certificate',graphVerified:true,sourceSHA256:digest};
-  this.reset();progress(1);return this;
+  check();this.reset();progress(1);loadTrace.event('scene-ready','PASS',{pieces:this.views.size});return this;
+  }catch(e){if(geometryMark)loadTrace.end(geometryMark,'ERROR',{code:e.code||'GEOMETRY_OR_LOAD_FAILED'});throw e;}
  }
  verifyMeshGraph(parts,progress){return new Promise((resolve,reject)=>{const worker=new Worker(new URL('./physics-worker.js',import.meta.url),{type:'module'});worker.onerror=e=>{worker.terminate();reject(Error(e.message));};worker.onmessage=({data})=>{if(data.progress!==undefined){progress(.90+data.progress*.1);return;}worker.terminate();if(data.error){reject(Error(data.error));return;}for(const p of this.level.pieces){if(JSON.stringify(data.graph[p.id].sort())!==JSON.stringify(p.pathBlockers.map(b=>b.id).sort())){reject(Error('Браузерный mesh solver расходится с Blender: '+p.id));return;}}resolve({mode:'browser continuous triangle SAT',graphVerified:true,pairs:data.pairs,milliseconds:data.milliseconds,graph:data.graph});};worker.postMessage({parts},parts.map(p=>p.triangles.buffer));});}
  makeArrows(view){this.pickMeshes.push(cachedSurfaceInk(view,this.inkMaterial,this.inkCache,this.level.id));}
+ destroy(){cancelAnimationFrame(this.raf);this.resizeObserver?.disconnect();this.unload();this.cachedFamily?.scene.traverse(o=>{if(o.isMesh){o.geometry.dispose();for(const m of [o.material].flat())m?.dispose();}});this.cachedFamily=null;this.environment.dispose();this.inkMaterial.dispose();this.path.geometry.dispose();this.path.material.dispose();this.renderer.dispose();this.renderer.forceContextLoss();this.renderer.domElement.remove();}
  unload(){this.animation=null;this.inkStamp=null;this.tapStamp=null;this.markerStamp=null;this.markerCache=new Map();for(const v of this.views.values()){for(const m of v.meshes){m.geometry.dispose();m.material.dispose();}v.arrowMesh?.geometry.dispose();v.arrowMesh?.material.dispose();}this.model?.removeFromParent();this.views.clear();this.pickMeshes=[];this.active.clear();this.tutorialFocus=null;}
 
  reset(){this.stageScale.reset();this.enterStage('shell');this.animation=null;this.inkStamp=null;this.path.visible=false;this.selected=null;this.hinted=null;this.tutorialFocus=null;this.flashIds=null;this.active=new Set(this.level.pieces.map(p=>p.id));for(const v of this.views.values()){v.group.visible=true;v.group.position.copy(v.start);}this.resetAngle();this.fitInitialAssembly();}

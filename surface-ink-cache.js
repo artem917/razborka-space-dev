@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {INK_CACHE} from './surface-ink-manifest.js';
 import {inkSHA,carrierSHA} from './surface-ink-contract.js';
+import {LoadTask,LOAD_LIMITS,loadBytes,decompressBytes,loadTrace} from './load-trace.js?v=android-readiness-v1';
 let pending;
 const Types={Float32Array,Uint32Array};
 function fail(message){throw Error('Проверенный кеш стрелок: '+message);}
@@ -17,10 +18,13 @@ export function validateInkCache(data,buffer,expected=INK_CACHE){
   }if(end!==count)fail('неполная разметка');parts.set(key,row);
  }return {data,buffer,parts};
 }
-export function loadInkCache(){
- if(!pending)pending=(async()=>{const urls=['./assets/surface-ink.json.gz','./assets/surface-ink.bin.gz'];const [json,binary]=await Promise.all(urls.map(async (path,i)=>{const r=await fetch(new URL(path,import.meta.url));if(!r.ok)fail('не удалось загрузить '+path);const zipped=await r.arrayBuffer(),prefix=i?'binary':'json';if(zipped.byteLength!==INK_CACHE[prefix+'GzipBytes']||await inkSHA(zipped)!==INK_CACHE[prefix+'GzipSHA256'])fail('SHA-256 сжатого буфера');return new Response(new Blob([zipped]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();}));
-  if(json.byteLength!==INK_CACHE.jsonBytes||await inkSHA(json)!==INK_CACHE.jsonSHA256||await inkSHA(binary)!==INK_CACHE.binarySHA256)fail('SHA-256');return validateInkCache(JSON.parse(new TextDecoder().decode(json)),binary);
- })().catch(e=>{pending=undefined;throw e;});return pending;
+export function loadInkCache({task,retry=false}={}){
+ if(pending?.cache){loadTrace.event('ink-cache','PASS',{cache:'verified'});return Promise.resolve(pending.cache);}
+ if(pending&&(!task||pending.task===task))return pending.promise;
+ const owned=!task;task||=new LoadTask('ink-load',{timeoutMs:LOAD_LIMITS.network});const entry={task};pending=entry;
+ entry.promise=(async()=>{try{const urls=['./assets/surface-ink.json.gz','./assets/surface-ink.bin.gz'];const [json,binary]=await Promise.all(urls.map(async (path,i)=>{const prefix=i?'binary':'json',stage='ink-'+prefix;const zipped=await loadBytes(new URL(path,import.meta.url),task,stage+'-fetch',{retry});await task.run(stage+'-zip-sha',async()=>{if(zipped.byteLength!==INK_CACHE[prefix+'GzipBytes']||await inkSHA(zipped)!==INK_CACHE[prefix+'GzipSHA256'])fail('SHA-256 сжатого буфера');});return decompressBytes(zipped,task,stage+'-decompress');}));
+  const cache=await task.run('ink-raw-sha',async()=>{if(json.byteLength!==INK_CACHE.jsonBytes||await inkSHA(json)!==INK_CACHE.jsonSHA256||await inkSHA(binary)!==INK_CACHE.binarySHA256)fail('SHA-256');return validateInkCache(JSON.parse(new TextDecoder().decode(json)),binary);});task.check();entry.cache=cache;if(owned)task.finish();return cache;
+ }catch(e){if(pending===entry)pending=undefined;if(owned){task.cancel('FAILED');task.finish('ERROR',e);}throw e;}})();return entry.promise;
 }
 export async function prepareInkCache(cache,level,views){
  if(level.assetSHA256!==INK_CACHE.assetSHA256)fail('GLB SHA-256');

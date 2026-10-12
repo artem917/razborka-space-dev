@@ -1,12 +1,13 @@
 import {libraryFromCertificate} from './levels.js';
 import {Puzzle,available,validateLevel} from './puzzle.js';
 import {ViewGesture,MIN_ZOOM,MAX_ZOOM} from './view-input.js';
-import {loadDelivered,deliveredModel} from './model-delivery.js';
+import {loadDelivered,resetModelDelivery} from './model-delivery.js?v=android-readiness-v1';
+import {LoadTask,LOAD_LIMITS,loadTrace,loadBytes,loadError} from './load-trace.js?v=android-readiness-v1';
 import {ObstructionLesson} from './onboarding.js';
 import {BrakychDialogue} from './dialogue.js';
 import {puzzleStage} from './stage-scale.js';
 import {migrateWorkshop,mergeWorkshopSaves,completeWorkshopJob,installThermocore,workshopState,victoryState} from './workshop-progress.js';
-import {mountWorkshop,WorkshopUI} from './workshop-ui.js';
+import {mountWorkshop,WorkshopUI} from './workshop-ui.js?v=android-readiness-v1';
 import {JOBS} from './workshop-data.js';
 const $=id=>document.getElementById(id),KEY='razborka.firstRun.v1',OLD_TUTORIAL='razborka.tutorial.v1',SOUND='razborka.sound.v1';
 const storage={get(k){try{return localStorage.getItem(k);}catch{return null;}},set(k,v){try{localStorage.setItem(k,v);}catch{}}};
@@ -19,21 +20,30 @@ const query=new URLSearchParams(location.search),qa=query.get('qa')==='1',gestur
 function storedProgress(){try{return JSON.parse(storage.get(KEY)||'{}');}catch{return{};}}
 const save=()=>{progress=mergeWorkshopSaves(storedProgress(),progress);storage.set(KEY,JSON.stringify(progress));};
 const record=(type,data={})=>{events.push({type,time:Math.round(performance.now()),...data});if(events.length>1000)events.shift();};
-const META_PAGES=['hub','catalogue','ship','galaxy','concept'];let rendering=false,pendingJob=null,launchRunning=false,enginePromise,loading=false,lastAward=false;
+const META_PAGES=['hub','catalogue','ship','galaxy','concept'];let rendering=false,pendingJob=null,launchRunning=false,enginePromise,loading=false,lastAward=false;let activeLoad,loadFailure=null,loadAttempt=0,viewObserver;
 const metaRoot=mountWorkshop();
-const metaUI=new WorkshopUI(metaRoot,{progress:()=>progress,ready:()=>ready,loading:()=>loading,qa,navigate:openWorkshop,launch:launchJob,install:installCore,speak:(id,text)=>metaTalk.say(id,text)});
+const metaUI=new WorkshopUI(metaRoot,{progress:()=>progress,ready:()=>ready,loading:()=>loading,qa,failure:()=>loadFailure,retry:retryLoad,navigate:openWorkshop,launch:launchJob,install:installCore,speak:(id,text)=>metaTalk.say(id,text)});
 function setRendering(enabled){if(!view)return;if(enabled&&!rendering){rendering=true;view.lastFrame=null;view.raf=requestAnimationFrame(view.tick);}else if(!enabled){cancelAnimationFrame(view.raf);rendering=false;}}
 function changeScreen(next){mode=next;document.body.dataset.screen=next;for(const id of ['splash','intro','win','preview','fatal'])$(id).hidden=id!==({splash:'splash',intro:'intro',victory:'win',preview:'preview',fatal:'fatal'}[next]);metaRoot.hidden=!META_PAGES.includes(next);if(!metaRoot.hidden)metaUI.show(next);setRendering(next==='play');record('screen',{screen:next});}
-function openWorkshop(page='hub',{jobIndex}={}){pendingJob=null;if(mode==='play'){generation++;gesture.reset();lesson=null;puzzle=null;view?.reset();$('guide-hand').hidden=true;$('skip-tutorial').hidden=true;delete $('stage').dataset.onboarding;}if(jobIndex!==undefined)metaUI.selectedJob=jobIndex;else if(page==='hub')metaUI.selectedJob=qa?orderIndex:JOBS.findIndex(j=>j.id===workshopState(progress).recommendedJob);changeScreen(page);const state=workshopState(progress);const lines={hub:state.coreReady?'Ядро добыто. Открой корабль и установи его.':state.reactorInstalled?'Реактор включён. Испытания — в архиве.':'Разбери чайник. Его ядро нужно кораблю.',catalogue:'Чайник — одна веха. Два испытания необязательны. Другие аппараты — пока эскизы.',ship:state.reactorInstalled?'Реактор включён. Теперь корабль может греться собственными неприятностями.':state.coreReady?'Ядро подходит к этому гнезду. Установи его — пусть корабль тоже поработает.':'Ядро для реактора — в первом чайнике. Производитель называл это подогревом.',galaxy:'Первый сектор ждёт разборки. Остальные ещё в разработке. Хлам не торопится.'};if(lines[page])metaTalk.say('meta-'+page+'-'+events.length,lines[page]);if(page==='hub')metaUI.loadMedia('hub').then(()=>ensureEngine().catch(fatal));}
+function openWorkshop(page='hub',{jobIndex}={}){if(loading){activeLoad?.cancel('NAVIGATION_CANCELLED');loading=false;}pendingJob=null;if(mode==='play'){generation++;gesture.reset();lesson=null;puzzle=null;view?.reset();$('guide-hand').hidden=true;$('skip-tutorial').hidden=true;delete $('stage').dataset.onboarding;}if(jobIndex!==undefined)metaUI.selectedJob=jobIndex;else if(page==='hub')metaUI.selectedJob=qa?orderIndex:JOBS.findIndex(j=>j.id===workshopState(progress).recommendedJob);changeScreen(page);const state=workshopState(progress);const lines={hub:state.coreReady?'Ядро добыто. Открой корабль и установи его.':state.reactorInstalled?'Реактор включён. Испытания — в архиве.':'Разбери чайник. Его ядро нужно кораблю.',catalogue:'Чайник — одна веха. Два испытания необязательны. Другие аппараты — пока эскизы.',ship:state.reactorInstalled?'Реактор включён. Теперь корабль может греться собственными неприятностями.':state.coreReady?'Ядро подходит к этому гнезду. Установи его — пусть корабль тоже поработает.':'Ядро для реактора — в первом чайнике. Производитель называл это подогревом.',galaxy:'Первый сектор ждёт разборки. Остальные ещё в разработке. Хлам не торопится.'};if(lines[page])metaTalk.say('meta-'+page+'-'+events.length,lines[page]);}
 function intro(){openWorkshop('hub');}
 async function launchJob(index){
  if(!Number.isInteger(index)||index<0||index>=JOBS.length)return;const state=workshopState(progress);if(index>0&&!qa&&!state.optionalJobs.includes(JOBS[index].id))return;
- pendingJob=index;metaUI.selectedJob=index;loading=true;metaUI.render();record('job-load-request',{index});if(launchRunning)return;
- if(ready&&view&&orderIndex===index){pendingJob=null;loading=false;startJob();return;}
- launchRunning=true;
- try{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));await ensureEngine();while(pendingJob!==null){const desired=pendingJob;if(orderIndex!==desired)await loadOrder(desired,{keepSplash:true});if(pendingJob!==desired)continue;pendingJob=null;loading=false;startJob();break;}}
- catch(e){fatal(e);}finally{launchRunning=false;loading=false;if(META_PAGES.includes(mode))metaUI.render();}
+ pendingJob=index;metaUI.selectedJob=index;if(launchRunning)return;
+ loading=true;loadFailure=null;metaUI.render();record('job-load-request',{index});launchRunning=true;
+ loadTrace.attempt=++loadAttempt;const task=new LoadTask('engine');activeLoad=task;
+ try{await task.paint();await ensureEngine(task);while(pendingJob!==null){const desired=pendingJob;if(orderIndex!==desired)await loadOrder(desired,{keepSplash:true,task});task.check();if(pendingJob!==desired)continue;pendingJob=null;
+   await task.run('shader-ready',()=>view.renderer.compileAsync?view.renderer.compileAsync(view.scene,view.camera):Promise.resolve());
+   await task.run('first-frame',async()=>{await task.paint();task.check();startJob();await task.paint();const canvas=view.renderer.domElement,r=canvas.getBoundingClientRect(),lost=view.renderer.getContext().isContextLost();if(lost||r.width<1||r.height<1||view.renderer.info.render.calls<1)throw loadError('FRAME_NOT_DRAWN','first-frame');loadTrace.event('frame-evidence','PASS',{drawCalls:view.renderer.info.render.calls,contextLost:lost,width:r.width,height:r.height,pieces:view.views.size});});
+   loadTrace.event('playable-ready','PASS',{pieces:level.pieces.length});task.finish();break;
+  }if(pendingJob===null&&!task.closed)task.finish('CANCELLED');
+ }catch(e){task.cancel(e.code==='NAVIGATION_CANCELLED'?'NAVIGATION_CANCELLED':'FAILED');task.finish(e.code==='NAVIGATION_CANCELLED'?'CANCELLED':'ERROR',e);clearLoader(e);}
+ finally{if(activeLoad===task){activeLoad=null;launchRunning=false;loading=false;if(META_PAGES.includes(mode))metaUI.render();}}
 }
+function clearLoader(error){setRendering(false);viewObserver?.disconnect();viewObserver=null;view?.destroy();view=null;ready=false;enginePromise=undefined;libraryReady=undefined;resetModelDelivery();pendingJob=null;loading=false;puzzle=null;lesson=null;gesture.reset();$('guide-hand').hidden=true;$('skip-tutorial').hidden=true;
+ if(error.code!=='NAVIGATION_CANCELLED'){loadFailure={code:typeof error.code==='string'?error.code:'LOAD_FAILED',stage:error.stage||'unknown',reload:error.stage==='module-import'};changeScreen('hub');record('load-failed',{code:loadFailure.code,stage:loadFailure.stage});}if(META_PAGES.includes(mode))metaUI.render();
+}
+function retryLoad(){if(loading)return;if(loadFailure?.reload){try{sessionStorage.setItem('razborka.loadRetry',String(metaUI.selectedJob));}catch{}location.reload();return;}launchJob(metaUI.selectedJob);}
 function installCore(){progress=mergeWorkshopSaves(storedProgress(),progress);const result=installThermocore(progress);progress=result.progress;save();metaUI.render();if(result.installed){sound('win');record('reactor-installed',{count:1});metaTalk.say('reactor-installed-'+events.length,'Реактор ожил. Теперь корабль кипятит неприятности без чайника.');}else metaTalk.say('reactor-not-installed-'+events.length,result.reason==='not-earned'?'Сначала добудь термоядро в первом чайнике. Пустое гнездо чаем не заполнишь.':'Ядро уже установлено. Второе из того же чайника не выжмешь.');}
 save();window.addEventListener('storage',e=>{if(e.key!==KEY)return;progress=mergeWorkshopSaves(storedProgress(),progress);if(META_PAGES.includes(mode))metaUI.render();if(mode==='victory')renderVictory();});
 function sound(kind){if(!soundOn)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const notes=kind==='win'?[523,659,784,1046]:kind==='blocked'?[130,100]:[420+(puzzle?.removed.length||0)*22,820];notes.forEach((f,i)=>{const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.09;o.type=kind==='blocked'?'triangle':'sine';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.025,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+.2);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+.22);});}catch{}}
@@ -101,12 +111,14 @@ function attempt(id){
  });
 }
 function renderVictory(){const state=victoryState(progress,level?.id,{awarded:lastAward});$('win-reward').textContent=state.reward;$('win-ship').hidden=!state.installCTA;$('win-hub').hidden=!qa;return state;}
-async function loadOrder(index,{keepSplash=false}={}){
+async function loadOrder(index,{keepSplash=false,task}={}){
+ const owned=!task;task||=new LoadTask('engine');try{task.check();
  ready=false;orderIndex=index;level=library[index];generation++;puzzle=null;gesture.reset();lesson=null;$('guide-hand').hidden=true;$('skip-tutorial').hidden=true;view.setTutorialFocus(null);
  if(!keepSplash)openWorkshop('hub',{jobIndex:index});if(META_PAGES.includes(mode))metaUI.render();else{$('start-job').disabled=true;$('start-job').textContent='Готовим стенд…';}
  document.querySelector('.job-heading .eyebrow').textContent='ЗАКАЗ '+String(index+1).padStart(3,'0')+' · '+(index===0?'ПЕРВАЯ СМЕНА':'БЛОЧНАЯ СБОРКА');
- await loadDelivered(view,level,{qa,progress:p=>{$('load-bar').style.width=Math.round(p*100)+'%';$('load-caption').textContent=p<.9?'Подключаем мастерскую…':'Почти готовы. Чайник уже подозревает.';}});
- ready=true;$('counter').textContent='0/'+level.pieces.length;$('start-job').disabled=false;$('start-job').textContent='Принять заказ →';$('load-caption').textContent='';zoomControls();$('qa-status').textContent=JSON.stringify(view.geometryAudit(),null,2);record('asset-ready',view.geometryAudit());if(META_PAGES.includes(mode))metaUI.render();if(pendingJob!==null&&!launchRunning)queueMicrotask(()=>launchJob(pendingJob));
+ await loadDelivered(view,level,{qa,task,retry:loadAttempt>1,progress:p=>{if(task.signal.aborted)return;$('load-bar').style.width=Math.round(p*100)+'%';$('load-caption').textContent=p<.9?'Подключаем мастерскую…':'Почти готовы. Чайник уже подозревает.';}});
+ task.check();ready=true;$('counter').textContent='0/'+level.pieces.length;$('start-job').disabled=false;$('start-job').textContent='Принять заказ →';$('load-caption').textContent='';zoomControls();$('qa-status').textContent=JSON.stringify(view.geometryAudit(),null,2);record('asset-ready',view.geometryAudit());if(META_PAGES.includes(mode))metaUI.render();if(pendingJob!==null&&!launchRunning)queueMicrotask(()=>launchJob(pendingJob));if(owned)task.finish();
+ }catch(e){if(owned){task.cancel('FAILED');task.finish('ERROR',e);}throw e;}
 }
 $('skip-splash').onclick=intro;$('start-job').onclick=()=>launchJob(metaUI.selectedJob);$('restart').onclick=startJob;$('win-restart').onclick=startJob;
 $('qa-replay-tutorial').onclick=async()=>{if(!qa||!ready)return;forceLesson=true;try{if(orderIndex!==0)await loadOrder(0);startJob();record('qa-tutorial-replay',{savePreserved:true});}catch(e){fatal(e);}};
@@ -122,19 +134,19 @@ window.addEventListener('resize',()=>requestAnimationFrame(positionHand));
 function updateSound(){for(const id of ['sound','meta-sound']){$(id).setAttribute('aria-pressed',String(soundOn));$(id).setAttribute('aria-label',soundOn?'Выключить звук':'Включить звук');}}updateSound();$('sound').onclick=()=>{soundOn=!soundOn;storage.set(SOUND,soundOn?'on':'off');updateSound();};$('meta-sound').onclick=()=>$('sound').click();
 window.__salvage={snapshot:()=>({ready,screen:mode,workshop:workshopState(progress),rendering,level:level?.id,total:level?.pieces.length||0,active:puzzle?[...puzzle.active.keys()]:[],available:puzzle?available([...puzzle.active.values()]).map(p=>p.id):[],removed:puzzle?[...puzzle.removed]:[],busy:!!puzzle?.busy,won:!!puzzle?.won,tutorial:lesson?.step||null,progress:structuredClone(progress),markers:view&&puzzle?view.markers():[],angle:view?[view.root.rotation.x,view.root.rotation.y]:[],zoom:view?.manualZoom,stage:view?.stageScale.stage,stagePreset:view?.stageScale.preset,dialogue:activeTalk()?.snapshot(),inputMode:gesture.mode,assetSHA256:view?.assetSHA256,physics:view?.qaProof}),events:()=>events.map(e=>structuredClone(e)),arrows:()=>view?.arrowAudit(),paintedArrows:()=>view?.paintedArrowAudit(),tutorialVisual,appearance:()=>view?.appearanceAudit(),geometry:()=>view?.geometryAudit(),metrics:()=>view?.metrics(),framing:id=>view?.framingAudit(id)};
 function fatal(e){console.error(e);$('fatal-message').textContent=e.message;changeScreen('fatal');record('fatal',{message:e.message});}
-async function ensureEngine(){if(enginePromise)return enginePromise;enginePromise=(async()=>{
- await libraryReady;
- const modelReady=deliveredModel().then(bytes=>({bytes}),error=>({error}));
- const {WorkshopScene}=await import('./scene.js');view=new WorkshopScene($('canvas-host'));setRendering(false);$('qa-panel').hidden=!qa||query.get('review')==='1';const canvas=view.renderer.domElement;
- new ResizeObserver(()=>requestAnimationFrame(positionHand)).observe($('canvas-host'));
+async function ensureEngine(task){if(enginePromise)return enginePromise;enginePromise=(async()=>{
+ await ensureLibrary(task);
+ const {createWorkshopScene}=await task.run('module-import',async()=>{await task.paint();return import('./scene.js?v=android-readiness-v1');},{timeoutMs:LOAD_LIMITS.module});
+ await task.run('renderer-create',async()=>{view=await createWorkshopScene($('canvas-host'),{task});});setRendering(false);$('qa-panel').hidden=!qa||query.get('review')==='1';const canvas=view.renderer.domElement;
+ viewObserver=new ResizeObserver(()=>requestAnimationFrame(positionHand));viewObserver.observe($('canvas-host'));
  canvas.addEventListener('pointerdown',e=>{if(mode!=='play'||!ready)return;e.preventDefault();const action=gesture.down(e.pointerId,e.clientX,e.clientY,performance.now(),view.manualZoom);canvas.setPointerCapture(e.pointerId);if(action.type==='single-start'){pointerPiece=view.pick(e.clientX,e.clientY);view.select(pointerPiece);}else{pointerPiece=null;view.select(null);record(action.type);}});
  canvas.addEventListener('pointermove',e=>{if(mode!=='play')return;if(e.pointerType==='mouse'&&!e.buttons)view.select(view.pick(e.clientX,e.clientY));const action=gesture.move(e.pointerId,e.clientX,e.clientY);if(action?.type==='pinch'){manualZoom(action.zoom,'pinch');return;}const delta=action?.delta;if(delta&&(delta[0]||delta[1])){view.select(null);rotate(...delta);}});
  canvas.addEventListener('pointerup',e=>{if(mode!=='play')return;const result=gesture.up(e.pointerId,e.clientX,e.clientY,performance.now());if(result.tap&&!talk.typing){const id=view.pick(e.clientX,e.clientY);if(id&&id===pointerPiece){if(talk.line?.next)talk.tap();attempt(id);}else dialogueTap();}else if(result.tap)talk.tap();if(result.pinchEnd)record('pinch-end');pointerPiece=null;view.select(null);if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);});
  canvas.addEventListener('pointercancel',e=>{gesture.cancel(e.pointerId);pointerPiece=null;view.select(null);record('pointer-cancel');});canvas.addEventListener('pointerleave',()=>{if(gesture.mode==='idle')view.select(null);});
- const dev=qa?library.findIndex(l=>l.id===query.get('template')):-1;const model=await modelReady;if(model.error)throw model.error;await loadOrder(dev<0?0:dev,{keepSplash:true});return view;
+ const dev=qa?library.findIndex(l=>l.id===query.get('template')):-1;await loadOrder(dev<0?0:dev,{keepSplash:true,task});return view;
  })();return enginePromise;}
-async function boot(){try{
- libraryReady=(async()=>{library=libraryFromCertificate(await(await fetch(new URL('./assets/puzzle-library.json',import.meta.url))).json());for(const l of library){const errors=validateLevel(l);if(errors.length)throw Error(errors.join(', '));}})();await libraryReady;
- if(qa)await ensureEngine();
- }catch(e){fatal(e);}}
+async function ensureLibrary(task){if(library){loadTrace.event('library-cache','PASS',{cache:'verified'});return library;}if(libraryReady)return libraryReady;
+ const promise=task.run('library',async()=>{const bytes=await loadBytes(new URL('./assets/puzzle-library.json',import.meta.url),task,'library-fetch',{timeoutMs:LOAD_LIMITS.library});const loaded=libraryFromCertificate(JSON.parse(new TextDecoder().decode(bytes)));for(const l of loaded){const errors=validateLevel(l);if(errors.length)throw Error(errors.join(', '));}task.check();library=loaded;return library;},{timeoutMs:LOAD_LIMITS.library});libraryReady=promise;try{return await promise;}catch(e){if(libraryReady===promise)libraryReady=undefined;throw e;}
+}
+async function boot(){if(qa){loadTrace.attempt=++loadAttempt;const task=new LoadTask('engine');activeLoad=task;try{await ensureEngine(task);task.finish();}catch(e){task.cancel('FAILED');task.finish('ERROR',e);clearLoader(e);}finally{if(activeLoad===task)activeLoad=null;}}else{let retry;try{retry=sessionStorage.getItem('razborka.loadRetry');sessionStorage.removeItem('razborka.loadRetry');}catch{}if(retry!==null&&retry!==undefined){openWorkshop('hub');launchJob(Number(retry));}}}
 boot();
