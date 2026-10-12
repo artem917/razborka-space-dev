@@ -194,3 +194,131 @@ body:is([data-screen=splash],[data-screen=hub],[data-screen=ship],[data-screen=c
 /* Local readability, without changing the layout or source art. */
 .meta-world[data-page=hub] .stand-teapot{filter:drop-shadow(0 0 2px #fff0cf) drop-shadow(0 7px 8px #06141fc0)}
 .meta-world[data-page=hub] .stand-hit:hover~.stand-zone .stand-teapot,.meta-world[data-page=hub] .stand-hit:focus-visible~.stand-zone .stand-teapot{filter:drop-shadow(0 0 5px #ffe3a0) drop-shadow(0 0 12px #da8d3870)}
+
+/* Ship: one game viewport, with the inspector beside the reactor console. */
+.meta-world[data-page=ship]{overflow:hidden}
+.meta-world[data-page=ship] .meta-shell{height:100%;min-height:0;max-width:1920px;grid-template-rows:44px 44px minmax(0,1fr);gap:8px;padding:12px 24px}
+.meta-world[data-page=ship] .meta-header{grid-row:1;background:none;border-radius:0}
+.meta-world[data-page=ship] .meta-brand{width:128px}
+.meta-world[data-page=ship] .meta-brand img{height:44px;object-fit:contain}
+.meta-world[data-page=ship] .hangar-stamp{display:none}
+.meta-world[data-page=ship] .meta-header .icon{margin-left:auto}
+.meta-world[data-page=ship] .meta-heading{grid-row:2}
+.meta-world[data-page=ship] .meta-heading .eyebrow{display:none}
+.meta-world[data-page=ship] .meta-heading h2{font-size:24px;margin:0}
+.meta-world[data-page=ship] .world-status{display:none}
+.meta-world[data-page=ship] .meta-stage{grid-row:3;height:100%}
+.meta-world[data-page=ship] .ship-view{height:100%}
+.meta-world[data-page=ship] .ship-room{height:100%;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(390px,28vw,480px);grid-template-rows:auto minmax(0,1fr);gap:12px 22px;align-items:stretch;background:linear-gradient(90deg,#0b202966 55%,#0b20299c),var(--ship-room-art,none) center/cover;border-radius:18px}
+.meta-world[data-page=ship] .ship-stage{grid-column:1;grid-row:1/3;min-height:0;display:grid;align-content:center;justify-items:center;padding:22px 12px;overflow:hidden}
+.meta-world[data-page=ship] .ship-image-frame{width:min(100%,calc((100dvh - 176px)*2));aspect-ratio:1774/887;max-height:none}
+.meta-world[data-page=ship] .ship-image-frame>img{display:block;width:100%;height:100%;object-fit:contain;max-height:none}
+.meta-world[data-page=ship] .ship-art-note{margin-top:12px;font-size:10px}
+.meta-world[data-page=ship] .reactor-console{grid-column:2;grid-row:1;width:100%;padding:18px 20px}
+.meta-world[data-page=ship] .reactor-console .eyebrow{font-size:8px;margin:0 0 12px}
+.meta-world[data-page=ship] .reactor-readout .core-symbol{width:46px;height:46px}
+.meta-world[data-page=ship] .reactor-readout h3{font-size:22px}
+.meta-world[data-page=ship] .reactor-readout strong{font-size:27px}
+.meta-world[data-page=ship] .reactor-console>p:not(.eyebrow){font-size:13px;line-height:1.4;margin:12px 0}
+.meta-world[data-page=ship] .core-inventory{font-size:13px;margin:12px 0}
+.meta-world[data-page=ship] .reactor-console .primary{min-height:48px;font-size:12px}
+.meta-world[data-page=ship] .reactor-console .quiet-link{font-size:11px;padding:6px;min-height:44px}
+.meta-world[data-page=ship] .meta-brakych{position:relative;grid-column:2;grid-row:2;right:auto;bottom:auto;align-self:start;justify-self:stretch;width:100%;margin:18px 0 0;display:flex;flex-direction:row-reverse;align-items:center;gap:0;min-height:0}
+.meta-world[data-page=ship] .brakych-world-character{width:44%;flex:none}
+.meta-world[data-page=ship] .brakych-world-character img{max-height:260px;width:100%;object-fit:contain;filter:drop-shadow(0 0 2px #eec180) drop-shadow(0 5px 8px #00111e)}
+.meta-world[data-page=ship] .brakych-world-character span{font-size:10px;min-height:36px;display:grid;place-items:center}
+.meta-world[data-page=ship] .meta-brakych .speech-bubble{height:210px;min-height:0;padding:34px 41px 34px 29px;flex:1}
+.meta-world[data-page=ship] .meta-brakych .speech-bubble p:not(.eyebrow){font-size:13px;line-height:1.4}
+.meta-world[data-page=ship] .meta-brakych .speech-bubble .eyebrow{font-size:7px;line-height:1.3;margin-bottom:7px;letter-spacing:.3px}
+.meta-nav .dev-story-link{font:600 11px/1.3 'Golos Text';min-height:44px;display:flex;align-items:center;color:#f0c97e;padding:8px;text-decoration:none;border-top:1px solid #668278}
+.meta-nav .dev-story-link:focus-visible{outline:3px solid #fff2c7;outline-offset:1px}
+@media(min-width:901px) and (max-height:780px){.meta-world[data-page=ship] .reactor-console{padding:14px 18px}.meta-world[data-page=ship] .reactor-console .eyebrow{margin-bottom:8px}.meta-world[data-page=ship] .core-inventory small{display:none}.meta-world[data-page=ship] .meta-brakych .speech-bubble{height:190px}.meta-world[data-page=ship] .brakych-world-character img{max-height:220px}}
+@media(max-width:900px) and (orientation:portrait){
+ .meta-world[data-page=ship] .meta-shell{grid-template-rows:44px 44px minmax(0,1fr);padding:8px 10px;gap:6px}
+ .meta-world[data-page=ship] .meta-header{position:relative}
+ .meta-world[data-page=ship] .meta-brand{width:122px}
+ .meta-world[data-page=ship] .meta-heading h2{font-size:21px}
+ .meta-world[data-page=ship] .world-return{min-height:44px;font-size:10px}
+ .meta-world[data-page=ship] .ship-room{display:grid;grid-template-columns:1fr;grid-template-rows:minmax(150px,1fr) auto auto;gap:7px}
+ .meta-world[data-page=ship] .ship-stage{grid-column:1;grid-row:1;width:100%;min-height:0;padding:6px;align-content:center}
+ .meta-world[data-page=ship] .ship-image-frame{width:100%;max-width:100%;height:auto}
+ .meta-world[data-page=ship] .ship-art-note{display:none}
+ .meta-world[data-page=ship] .reactor-console{grid-column:1;grid-row:2;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:6px 8px}
+ .meta-world[data-page=ship] .reactor-console .eyebrow,.meta-world[data-page=ship] .core-inventory small{display:none}
+ .meta-world[data-page=ship] .reactor-readout{grid-column:1;gap:8px}
+ .meta-world[data-page=ship] .reactor-readout .core-symbol{width:35px;height:35px}
+ .meta-world[data-page=ship] .reactor-readout h3{font-size:16px;margin:0}
+ .meta-world[data-page=ship] .reactor-readout strong{font-size:22px}
+ .meta-world[data-page=ship] .core-inventory{grid-column:2;grid-row:1;font-size:10px;align-self:center;margin:0}
+ .meta-world[data-page=ship] .reactor-console>p:not(.eyebrow){grid-column:1/-1;font-size:12px;line-height:1.35;margin:0}
+ .meta-world[data-page=ship] .reactor-console .primary,.meta-world[data-page=ship] .reactor-console .quiet-link{grid-column:1/-1;min-height:44px;font-size:11px}
+ .meta-world[data-page=ship] .reactor-console .quiet-link{padding:0}
+ .meta-world[data-page=ship] .meta-brakych{grid-column:1;grid-row:3;align-self:end;align-items:center;height:174px;margin:0}
+ .meta-world[data-page=ship] .brakych-world-character{width:32%;max-width:150px}
+ .meta-world[data-page=ship] .brakych-world-character img{height:138px;width:100%;object-fit:contain}
+ .meta-world[data-page=ship] .brakych-world-character span{font-size:8px;min-height:30px}
+ .meta-world[data-page=ship] .meta-brakych .speech-bubble{height:174px;padding:27px 40px 27px 28px}
+ .meta-world[data-page=ship] .meta-brakych .speech-bubble p:not(.eyebrow){font-size:12px;line-height:1.35}
+ .meta-world[data-page=ship] .meta-brakych .speech-bubble .eyebrow{font-size:6px}
+}
+@media(max-width:900px) and (orientation:portrait) and (max-height:710px){.meta-world[data-page=ship]{overflow-y:auto}.meta-world[data-page=ship] .meta-shell{min-height:640px}.meta-world[data-page=ship] .meta-brakych{height:155px}.meta-world[data-page=ship] .meta-brakych .speech-bubble{height:155px}.meta-world[data-page=ship] .brakych-world-character img{height:120px}}
+
+/* Two comic compositions reuse the approved hangar, character and teapot art. */
+body[data-screen=story]{background-image:none}
+.story-world{position:fixed;inset:0;z-index:30;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:64px minmax(0,1fr) 88px;align-items:stretch;justify-content:stretch;background:#0b2029;color:#f5e6c6;overflow:hidden;padding:12px 24px;isolation:isolate}
+.story-world[hidden]{display:none!important}
+.story-backdrop,.story-backdrop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.story-world:before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(#061723db,transparent 35%,#061723ba),radial-gradient(ellipse at 72% 36%,#183e4a8c,transparent 70%);pointer-events:none}
+.story-header{display:flex;align-items:center;gap:20px;font:400 11px 'Russo One';position:relative;z-index:3}
+.story-stamp{color:#8be4d8;letter-spacing:1px}.story-header #story-step{margin-left:auto;color:#ffd490}
+.story-header .tool{min-height:44px;font-size:12px;padding:10px 16px}
+.story-composition{position:relative;min-height:0;max-width:1600px;width:100%;margin:auto;height:100%}
+.story-title{position:absolute;top:4%;left:5%;z-index:2;text-shadow:0 3px 8px #001522}
+.story-title small{font:400 12px 'Russo One';color:#a2e8d7;letter-spacing:2px}
+.story-title h2{font:400 clamp(28px,3vw,48px)/1.12 'Russo One';white-space:pre-line;margin:12px 0;color:#ffe1a4}
+.story-character{position:absolute;height:77%;max-width:42%;width:auto;object-fit:contain;left:8%;bottom:0;filter:drop-shadow(0 10px 16px #061723)}
+.story-cloud{position:absolute;left:43%;top:15%;width:52%;height:52%;max-height:340px;min-height:260px;padding:48px clamp(78px,6.4vw,110px) 48px clamp(100px,8.2vw,136px);display:flex;flex-direction:column;justify-content:center;z-index:2;color:#24343b}
+.story-cloud .bubble-shell.side{display:block;transform:none}.story-cloud .bubble-shell.down{display:none}
+.story-cloud .eyebrow{font:400 10px/1.3 'Russo One';margin:0 0 10px;letter-spacing:.6px}
+.story-cloud #story-line{font:650 clamp(16px,1.65vw,24px)/1.45 'Golos Text';margin:0}
+.story-caption{position:absolute;left:48%;bottom:12%;width:42%;max-width:520px;font:500 clamp(16px,1.45vw,22px)/1.4 'Golos Text';color:#fbe4b9;text-shadow:0 2px 5px #061523;background:#0b2432b8;border-left:3px solid #f4b457;padding:14px 18px}
+.story-order{position:absolute;left:5%;bottom:0;margin:0;width:37%;height:72%;display:flex;flex-direction:column;align-items:center;justify-content:center;filter:drop-shadow(0 8px 20px #00101a);z-index:1}
+.story-order[hidden]{display:none}.story-order img{width:auto;max-width:100%;height:calc(100% - 70px);object-fit:contain;border:2px solid #b68b56;border-radius:22%;box-shadow:0 0 40px #ffaa3433}
+.story-order figcaption{display:grid;gap:5px;text-align:center;background:#14313be8;border:1px solid #b68b56;border-radius:7px;padding:9px 18px;margin-top:10px;font:400 10px 'Russo One';color:#a5e1d8}.story-order figcaption span{font-size:18px;color:#ffe1a4}
+.story-world[data-frame='2'] .story-character{height:44%;max-width:26%;left:auto;right:4%}
+.story-world[data-frame='2'] .story-caption{left:47%;bottom:12%;width:26%;font-size:18px}
+.story-footer{position:relative;display:flex;justify-content:flex-end;align-items:center;gap:16px;max-width:1500px;width:100%;margin:auto;z-index:3}
+.story-footer .primary{width:auto;min-width:300px;min-height:54px;font-size:17px;padding:14px 26px}.story-footer .quiet-link{min-height:44px;color:#f2d9a6}
+#story-media-status{margin-right:auto;font:600 12px 'Golos Text';color:#ffe0ad}#story-media-status:empty{display:none}
+.story-footer .tool{min-height:44px;font-size:11px}
+.story-world button:focus-visible{outline:3px solid #fff2c7;outline-offset:4px}
+#story-qa-banner{position:fixed;bottom:0;left:0;right:0;height:48px;z-index:100;background:#282936f5;color:#ffe3ac;display:flex;align-items:center;justify-content:center;gap:16px;font:600 11px 'Golos Text';border-top:1px solid #b59a70}
+#story-qa-banner a{color:#a8eade;min-height:44px;display:flex;align-items:center}
+body[data-story-qa=true] .meta-world,body[data-story-qa=true] .story-world{bottom:48px}
+body[data-story-qa=true] .meta-world:is([data-page=hub],[data-page=galaxy]) .meta-shell{height:100%}
+body[data-story-qa=true] .workshop{height:calc(100dvh - 48px)}
+body[data-story-qa=true][data-loadtrace=true] #story-qa-banner{bottom:54px}
+body[data-story-qa=true][data-loadtrace=true] .meta-world,body[data-story-qa=true][data-loadtrace=true] .story-world{bottom:102px}
+body[data-story-qa=true][data-loadtrace=true] .workshop{height:calc(100dvh - 102px)}
+body[data-loadtrace=true] .story-world{bottom:54px}
+@media(max-width:900px) and (orientation:portrait){
+ .story-world{grid-template-rows:52px minmax(0,1fr) auto;padding:8px 12px}
+ .story-header{gap:8px;font-size:10px}.story-stamp{font-size:8px;letter-spacing:.5px;max-width:100px;line-height:1.4}.story-header .tool{font-size:10px;padding:7px 9px}
+ .story-title{left:3%;top:2%}.story-title small{font-size:9px;letter-spacing:1px}.story-title h2{font-size:28px;margin:7px 0}
+ .story-character{height:44%;max-width:60%;left:2%;bottom:1%}
+ .story-cloud{left:0;top:24%;width:100%;height:216px;min-height:216px;max-height:230px;padding:34px 14% 38px 19%}
+ .story-cloud .bubble-shell.side{display:none}.story-cloud .bubble-shell.down{display:block;transform:scaleX(-1)}
+ .story-cloud #story-line{font-size:15px;line-height:1.4}.story-cloud .eyebrow{font-size:7px;line-height:1.3;margin-bottom:7px;letter-spacing:.3px}
+ .story-caption{left:54%;bottom:10%;width:45%;padding:8px 9px;font-size:13px;line-height:1.4}
+ .story-footer{display:grid;grid-template-columns:1fr auto;gap:6px;padding:6px 0}
+ .story-footer .primary{min-width:0;grid-column:1/-1;min-height:52px;font-size:13px;padding:12px 10px;width:100%}
+ .story-footer .quiet-link{grid-column:1;grid-row:1;justify-self:start;font-size:11px;padding:6px}
+ #story-media-status{font-size:10px}.story-footer .tool{font-size:9px}
+ .story-world[data-frame='2'] .story-cloud{top:23%;height:206px;min-height:206px}
+ .story-world[data-frame='2'] .story-character{height:29%;max-width:35%;right:0;left:auto;bottom:4%}
+ .story-world[data-frame='2'] .story-order{width:61%;height:40%;left:0;bottom:1%}
+ .story-world[data-frame='2'] .story-order img{height:calc(100% - 54px);border-radius:20%}
+ .story-order figcaption{padding:6px 8px;margin-top:5px;font-size:7px}.story-order figcaption span{font-size:12px}
+ .story-world[data-frame='2'] .story-caption{display:none}
+}
+@media(max-width:340px) and (orientation:portrait){.story-title h2{font-size:25px}.story-cloud{padding:34px 14% 38px 19%}.story-cloud #story-line{font-size:13px}.story-caption{font-size:12px}}
