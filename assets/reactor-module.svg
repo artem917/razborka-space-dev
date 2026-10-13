@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 190">
+ <defs>
+  <radialGradient id="well"><stop stop-color="#ffcf76" stop-opacity=".6"/><stop offset=".65" stop-color="#be661b" stop-opacity=".3"/><stop offset="1" stop-color="#090c0c"/></radialGradient>
+  <linearGradient id="steel"><stop stop-color="#171f21"/><stop offset=".27" stop-color="#a0a494"/><stop offset=".48" stop-color="#444d49"/><stop offset=".7" stop-color="#c5bfa2"/><stop offset="1" stop-color="#1d292b"/></linearGradient>
+  <linearGradient id="copper" x2="1" y2=".2"><stop stop-color="#4a240d"/><stop offset=".25" stop-color="#dc8c36"/><stop offset=".45" stop-color="#ffe2a0"/><stop offset=".65" stop-color="#d57823"/><stop offset="1" stop-color="#54280c"/></linearGradient>
+  <linearGradient id="glass"><stop stop-color="#faffd6"/><stop offset=".3" stop-color="#ffd17b"/><stop offset=".62" stop-color="#e77616"/><stop offset="1" stop-color="#743308"/></linearGradient>
+  <radialGradient id="lens"><stop stop-color="#fffce1"/><stop offset=".3" stop-color="#ffe59a"/><stop offset=".62" stop-color="#f3942e"/><stop offset="1" stop-color="#3d2416"/></radialGradient>
+  <clipPath id="socket"><ellipse cx="70" cy="95" rx="63" ry="87"/></clipPath>
+ </defs>
+ <g clip-path="url(#socket)">
+  <ellipse cx="70" cy="95" rx="63" ry="87" fill="url(#well)"/>
+  <ellipse cx="73" cy="105" rx="45" ry="72" fill="#020707" opacity=".8"/>
+  <path d="M36 34Q70 17 101 33L104 150Q74 174 39 158Z" fill="url(#steel)" stroke="#0a1415" stroke-width="4"/>
+  <path d="M50 40Q70 28 88 39V148Q70 159 53 149Z" fill="url(#glass)" stroke="#332a16" stroke-width="3"/>
+  <g fill="none" stroke="url(#copper)" stroke-width="12">
+   <path d="M30 49Q66 66 108 45M30 69Q66 86 109 65M31 89Q67 106 109 85M32 109Q68 126 110 105M34 129Q69 146 109 125M35 149Q69 166 108 145"/>
+  </g>
+  <g fill="none" stroke="#ffe4a0" stroke-opacity=".6" stroke-width="1.6"><path d="M33 45Q65 57 105 42M33 65Q65 77 106 62M34 85Q66 97 106 82M35 105Q67 117 107 102M37 125Q68 137 106 122M38 145Q68 157 105 142"/></g>
+  <ellipse cx="69" cy="32" rx="33" ry="15" fill="url(#steel)" stroke="#232d2b" stroke-width="4"/>
+  <ellipse cx="69" cy="30" rx="19" ry="8" fill="url(#lens)" stroke="#804219" stroke-width="2"/>
+  <path d="M39 37L43 156M97 35L99 151" stroke="#a9b0a1" stroke-width="7"/>
+  <path d="M41 40L44 151M98 38L99 148" stroke="#e3dbc0" stroke-width="1.2"/>
+  <g fill="#4a534c" stroke="#c9c6ac" stroke-width="1.5"><circle cx="41" cy="48" r="4"/><circle cx="42" cy="91" r="4"/><circle cx="43" cy="139" r="4"/><circle cx="99" cy="46" r="4"/><circle cx="99" cy="90" r="4"/><circle cx="100" cy="134" r="4"/></g>
+  <path d="M9 75L36 66L43 80L15 92Z M105 125L129 112L132 130L109 144Z" fill="url(#steel)" stroke="#172322" stroke-width="4"/>
+  <g stroke="#1b2726" stroke-width="2" fill="#b0ac96"><circle cx="24" cy="79" r="5"/><circle cx="119" cy="127" r="5"/></g>
+  <path d="M50 51L55 139" stroke="#fff9d0" stroke-opacity=".6" stroke-width="3"/>
+  <g stroke="#131d1c" stroke-width="1" opacity=".55"><path d="M41 64l3-2M43 114l-4 1M95 76l4-2M101 121l-4 3M70 21l4 2M57 29l-3 2"/></g>
+ </g>
+</svg>

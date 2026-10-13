@@ -322,3 +322,58 @@ body[data-loadtrace=true] .story-world{bottom:54px}
  .story-world[data-frame='2'] .story-caption{display:none}
 }
 @media(max-width:340px) and (orientation:portrait){.story-title h2{font-size:25px}.story-cloud{padding:34px 14% 38px 19%}.story-cloud #story-line{font-size:13px}.story-caption{font-size:12px}}
+
+/* The installed cartridge sits inside the photographed aperture, below its rim. */
+.meta-world .installed-core{position:absolute;left:53%;top:43.5%;width:7.4%;height:19.5%;object-fit:fill;pointer-events:none;display:none;filter:drop-shadow(0 0 3px #ffba55) drop-shadow(0 0 9px #f68e2855);z-index:2}
+.meta-world[data-installed=true] .installed-core{display:block}
+.meta-world[data-page=ship] .ship-image-frame>img.installed-core{width:7.4%;height:19.5%;object-fit:fill;display:none}
+.meta-world[data-page=ship][data-installed=true] .ship-image-frame>img.installed-core{display:block}
+.meta-world[data-page=hub] .ship-preview>img.installed-core{display:none}
+.meta-world[data-page=hub][data-installed=true] .ship-preview>img.installed-core{display:block}
+.meta-world .ship-preview .installed-core{width:7.4%;height:calc((100% - 38px)*.195);top:calc((100% - 38px)*.435)}
+.meta-world .ship-preview>.reactor-light,.meta-world .reactor-port>.reactor-light{display:none}
+.meta-world[data-page=ship] .reactor-port{left:51.6%;top:39%;width:9%;height:24%;border:1px solid #ecc08b99;border-radius:50%;background:none;z-index:3}
+.meta-world[data-page=ship][data-installed=true] .reactor-port{border-color:transparent}
+.meta-world[data-page=ship][data-ready-core=true] .reactor-port{box-shadow:0 0 12px #efaf4b80}
+.meta-nav{max-height:calc(100dvh - 90px);overflow-y:auto}
+
+/* One world, five acknowledged stops; only the real target remains undimmed. */
+#first-guide{position:fixed;inset:0;z-index:60;pointer-events:none;color:#f4e2ba;padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+#first-guide[hidden]{display:none!important}
+.guide-mask{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.guide-mask path{fill:#020e1bbd}
+.guide-target-ring{position:absolute;border:2px solid #ffda87;border-radius:14px;box-shadow:0 0 14px #f9bf5066;pointer-events:none}
+.guide-target-ring[data-kind=real-arrow]{border-radius:50%;border-style:dashed;box-shadow:0 0 9px #ffdf84}
+.guide-card{position:absolute;display:grid;grid-template-columns:108px minmax(0,1fr);grid-template-rows:20px 168px 48px;gap:4px 0;pointer-events:auto;filter:drop-shadow(0 7px 10px #0009)}
+.guide-speaker{grid-column:1;grid-row:2;align-self:center;display:grid;justify-items:center}
+.guide-speaker img{width:100%;max-height:155px;object-fit:contain}
+.guide-speaker span{font:400 10px 'Russo One';color:#ffe1a7;text-shadow:0 2px 3px #000}
+.guide-card h3{grid-column:1/-1;grid-row:1;font:400 12px/1.3 'Russo One';margin:0;text-shadow:0 2px 3px #000;color:#a7ecdf}
+.guide-card .guide-cloud{grid-column:2;grid-row:2;height:168px;min-height:0;padding:28px 42px 28px 70px;cursor:default}
+.guide-cloud p{font:650 16px/1.4 'Golos Text';margin:0}
+.guide-actions{grid-column:1/-1;grid-row:3;display:flex;align-items:center;justify-content:flex-end;gap:12px}
+.guide-actions .primary{width:auto;min-width:180px;min-height:48px;font-size:13px;padding:8px 14px}
+.guide-actions .quiet-link{min-height:44px;font-size:12px;color:#f7dfaa;text-shadow:0 2px 3px #000}
+.guide-card button:focus-visible{outline:3px solid #fff0b9;outline-offset:3px}
+#spatial-action{position:absolute;bottom:6px;left:10px;right:10px;text-align:center;margin:0;font:600 12px/1.3 'Golos Text';color:#fff0ca;background:#102d38df;border-radius:6px;padding:5px;pointer-events:none}
+#spatial-action:empty{display:none}
+body[data-guide-pause=lesson] #spatial-action{visibility:hidden}
+body[data-guide-pause=lesson] .inspector{visibility:hidden}
+body[data-guide-pause=tour] .meta-brakych{visibility:hidden}
+.story-owner-tail{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible}
+.story-owner-tail path{fill:#f8e6c6;stroke:#25383b;stroke-width:2.8;stroke-linejoin:round}
+@media(max-width:900px){
+ .guide-card{grid-template-columns:74px minmax(0,1fr);grid-template-rows:16px 152px 44px;gap:3px 0}
+ .guide-card h3{font-size:9px;line-height:1.3}
+ .guide-speaker img{max-height:112px}.guide-speaker span{font-size:8px}
+ .guide-card .guide-cloud{height:152px;padding:22px 28px 24px 50px}
+ .guide-cloud p{font-size:13px;line-height:1.35}
+ .guide-actions{gap:6px}.guide-actions .primary{min-height:44px;font-size:11px;min-width:140px;padding:8px 11px}
+ .guide-actions .quiet-link{font-size:10px;padding:4px}
+ .meta-world .ship-preview .installed-core{height:calc((100% - 32px)*.195);top:calc((100% - 32px)*.435)}
+}
+@media(max-width:340px){.guide-card{grid-template-columns:62px minmax(0,1fr);grid-template-rows:14px 144px 44px}.guide-card .guide-cloud{height:144px;padding:20px 26px 24px 44px}.guide-cloud p{font-size:12px;line-height:1.35}.guide-actions .primary{font-size:10px;min-width:128px}.guide-actions .quiet-link{font-size:9px}}
+.guide-card[data-layout=side]{grid-template-columns:82px minmax(0,1fr)}
+.guide-card[data-layout=side] .guide-cloud{padding:28px 32px 28px 68px}
+.guide-card[data-layout=side] .guide-cloud p{font-size:14px;line-height:1.35}
+@media(max-width:900px){body[data-guide-pause=lesson] #stage{transform:translateY(var(--lesson-shift,0px))}}
