@@ -377,3 +377,21 @@ body[data-guide-pause=tour] .meta-brakych{visibility:hidden}
 .guide-card[data-layout=side] .guide-cloud{padding:28px 32px 28px 68px}
 .guide-card[data-layout=side] .guide-cloud p{font-size:14px;line-height:1.35}
 @media(max-width:900px){body[data-guide-pause=lesson] #stage{transform:translateY(var(--lesson-shift,0px))}}
+
+/* Short first shift: the real order button stays the only action before play. */
+.stand-zone[data-first-order=true] #start-job{box-shadow:0 0 0 2px #ffdb8c,0 0 16px #f0b84a80}
+.stand-zone[data-first-order=true] .stand-ticket>small{color:#ffe3a2}
+.meta-nav .help-tour{border-top:1px solid #668278;color:#ffdf9d;font-size:12px;text-align:left;min-height:44px}
+#stage>#skip-tutorial{position:absolute;top:34px;right:10px;z-index:4;min-height:44px;padding:8px 10px;background:#102c37e8;border:1px solid #8aa29b;border-radius:7px;font-size:11px;color:#f5dfae}
+body[data-instruction-owner] #spatial-action{padding:9px 10px;font-size:13px;line-height:1.4}
+.guide-arrow-detail{margin:0;display:grid;justify-items:center;gap:3px}
+.guide-arrow-detail[hidden]{display:none}
+.guide-arrow-detail canvas{width:100px;height:100px;border:2px solid #ffdf91;border-radius:50%;background:#142d36;box-shadow:0 0 12px #f3c76566}
+.guide-arrow-detail figcaption{font:600 9px/1.2 'Golos Text';white-space:nowrap;color:#ffe4a7}
+#first-guide[data-detail=true] .guide-speaker img{max-height:40px}
+#first-guide[data-detail=true] .guide-speaker>span{display:none}
+@media(max-width:900px){.guide-arrow-detail canvas{width:78px;height:78px}.guide-arrow-detail figcaption{font-size:8px}#first-guide[data-detail=true] .guide-speaker img{max-height:38px}}
+@media(max-width:340px){.guide-arrow-detail canvas{width:62px;height:62px}.guide-arrow-detail figcaption{font-size:7px}}
+
+/* Reserve the isolated QA footer on short and wide desktop views too. */
+@media(min-width:901px){body[data-story-qa=true] .workshop{margin-top:12px;row-gap:14px}body[data-story-qa=true] .stage{max-height:calc(100dvh - 330px)}}
