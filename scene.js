@@ -36,7 +36,7 @@ export class WorkshopScene {
  enterStage(stage){if(!this.stageScale.enter(stage,this.isMobile()))return false;this.fitInitialAssembly();this.setZoom(this.manualZoom);return true;}
  resetAngle(){this.root.rotation.set(.22,-.45,0);}
  rotate(dx,dy){this.root.rotation.y+=dx*.009;this.root.rotation.x=THREE.MathUtils.clamp(this.root.rotation.x+dy*.009,-1.5,1.5);this.root.updateMatrixWorld(true);}
- async load(level,{qa=false,progress=()=>{},task,retry=false}={}){
+ async load(level,{qa=false,progress=()=>{},task,retry=false,inkLoader=loadInkCache,inkPrepare=prepareInkCache,attributes=[]}={}){
   const check=()=>task?.check(),run=(name,fn)=>task?task.run(name,fn):fn();let geometryMark;try{check();
   this.unload();this.level=level;let bytes,digest;
   if(this.cachedFamily?.digest===level.assetSHA256){bytes=this.cachedFamily.bytes;digest=this.cachedFamily.digest;progress(.82);}else{
@@ -47,7 +47,7 @@ export class WorkshopScene {
   bytes=new Uint8Array(n);let cursor=0;for(const c of chunks){bytes.set(c,cursor);cursor+=c.length;}}
   check();await run('glb-scene-sha',async()=>{digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');if(digest!==level.assetSHA256)throw Error('Модель не соответствует проверенной геометрии');});
   const gltf=await run('gltf-parse',async()=>{await task?.paint();return new GLTFLoader().parseAsync(bytes.buffer,'');});check();this.cachedFamily={bytes,digest,scene:gltf.scene};}
-  const inkReady=run('ink-load',()=>loadInkCache({task,retry})).then(cache=>({cache}),error=>({error}));
+  const inkReady=run('ink-load',()=>inkLoader({task,retry})).then(cache=>({cache}),error=>({error}));
   geometryMark=loadTrace.begin('geometry',{pieces:level.pieces.length});await task?.paint();check();
   this.model=this.cachedFamily.scene.clone(true);this.model.updateMatrixWorld(true);
   const selected=new Set(level.pieces.map(p=>p.node||p.id));for(const child of [...this.model.children])if(!selected.has(child.name))child.removeFromParent();
@@ -61,7 +61,7 @@ export class WorkshopScene {
     const pos=mesh.geometry.getAttribute('position'),idx=mesh.geometry.index,physical=!mesh.userData.decal_surface&&mesh.userData.role!=='removal_arrow';
     if(physical){for(let i=0;i<(idx?.count||pos.count);i++){const p=new THREE.Vector3().fromBufferAttribute(pos,idx?idx.getX(i):i).applyMatrix4(mesh.matrixWorld);triangles.push(p.x,p.y,p.z);worldBox.expandByPoint(p);}}
     const key=mesh.material.uuid+(mesh.userData.decal_surface?'_paint':'');let geo=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();
-    for(const name of Object.keys(geo.attributes))if(!['position','normal','uv'].includes(name))geo.deleteAttribute(name);
+    for(const name of Object.keys(geo.attributes))if(!['position','normal','uv',...attributes].includes(name))geo.deleteAttribute(name);
     if(!geo.attributes.normal)geo.computeVertexNormals();if(!geo.attributes.uv)geo.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count*2),2));
     geo.applyMatrix4(inv.clone().multiply(mesh.matrixWorld));if(!buckets.has(key))buckets.set(key,{material:mesh.material,paint:!!mesh.userData.decal_surface,geometries:[]});buckets.get(key).geometries.push(geo);
    }
@@ -78,7 +78,7 @@ export class WorkshopScene {
   for(let n=0;n<level.pieces.length;n++){const p=level.pieces[n],v=this.views.get(p.id),points=[],box=new THREE.Box3();for(const mesh of v.meshes){if(mesh.userData.decal_surface)continue;const attr=mesh.geometry.attributes.position;for(let i=0;i<attr.count;i++){const point=new THREE.Vector3().fromBufferAttribute(attr,i).applyMatrix4(mesh.matrixWorld);points.push(point.x,point.y,point.z);box.expandByPoint(point);}}if(points.length!==collisionParts[n].triangles.length)throw Error('Оптимизация потеряла треугольники');for(let i=0;i<3;i++)if(Math.abs(box.min.getComponent(i)-p.bounds.min[i])>2e-5||Math.abs(box.max.getComponent(i)-p.bounds.max[i])>2e-5)throw Error('Оптимизация изменила габариты');collisionParts[n].triangles=new Float64Array(points);await task?.yield();check();}
   loadTrace.end(geometryMark,'PASS');
   const inkResult=await inkReady;check();if(inkResult.error)throw inkResult.error;
-  this.inkCache=await run('ink-prepare',async()=>{await task?.paint();return prepareInkCache(inkResult.cache,level,this.views);});check();
+  this.inkCache=await run('ink-prepare',async()=>{await task?.paint();return inkPrepare(inkResult.cache,level,this.views);});check();
   await run('ink-install',async()=>{for(const v of this.views.values()){this.makeArrows(v);await task?.yield();check();}});
   this.assetOffset.add(this.model);this.assetSHA256=digest;this.optimization={originalMeshes,mergedMeshes,parts:level.pieces.length,geometryChanged:false};progress(.9);
   if(qa){this.qaProof=await this.verifyMeshGraph(collisionParts,progress);}else this.qaProof={mode:'SHA-bound native continuous-mesh certificate',graphVerified:true,sourceSHA256:digest};

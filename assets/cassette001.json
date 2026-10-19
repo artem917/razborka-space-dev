@@ -1,0 +1,709 @@
+{
+  "schema": 2,
+  "id": "cassette001",
+  "family": "cassette001",
+  "name": "Бракованная кассета энергоблока",
+  "asset": "./assets/cassette001.glb",
+  "assetSHA256": "5224ec9847350bc971a04d887d5cff0d50619f8ceeb28857c932be6fd0351612",
+  "pathDistance": 6,
+  "reachableStates": 54,
+  "solution": [
+    "rear-release",
+    "top-guide",
+    "front-right",
+    "front-panel",
+    "front-left",
+    "front-rail",
+    "lower-bus",
+    "left-foot",
+    "left-elbow",
+    "rear-left-spine",
+    "service-key",
+    "rear-crossbar",
+    "right-side",
+    "right-bottom",
+    "rear-bottom-right",
+    "rear-bottom-left",
+    "rear-left-latch",
+    "left-top",
+    "upper-cap",
+    "core"
+  ],
+  "initiallyAccessible": [
+    "rear-release",
+    "service-key"
+  ],
+  "pieces": [
+    {
+      "id": "core",
+      "node": "core",
+      "name": "Магнитный регулятор",
+      "dir": [
+        0,
+        1,
+        0
+      ],
+      "stage": "core",
+      "core": true,
+      "libraryType": "cassette-core",
+      "bounds": {
+        "min": [
+          -0.2760000228881836,
+          -0.20000000298023224,
+          -0.29600003361701965
+        ],
+        "max": [
+          0.2760000228881836,
+          0.20000000298023224,
+          0.29600003361701965
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "upper-cap",
+          "distance": 0.46650001406669617
+        }
+      ]
+    },
+    {
+      "id": "upper-cap",
+      "node": "upper-cap",
+      "name": "Верхняя запирающая шина",
+      "dir": [
+        -1,
+        0,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-rail",
+      "bounds": {
+        "min": [
+          -0.23999999463558197,
+          0.27399998903274536,
+          -0.29600003361701965
+        ],
+        "max": [
+          0.23999999463558197,
+          0.8060000538825989,
+          0.29600003361701965
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "left-top",
+          "distance": 0.17040190696709193
+        }
+      ]
+    },
+    {
+      "id": "left-top",
+      "node": "left-top",
+      "name": "Левый направляющий замок",
+      "dir": [
+        0,
+        0,
+        -1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-latch",
+      "bounds": {
+        "min": [
+          -0.8360000252723694,
+          0.27399998903274536,
+          -0.2150000035762787
+        ],
+        "max": [
+          -0.2839999794960022,
+          0.8060000538825989,
+          0.2150000035762787
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "rear-left-latch",
+          "distance": 0.5550000071525574
+        }
+      ]
+    },
+    {
+      "id": "rear-left-latch",
+      "node": "rear-left-latch",
+      "name": "Задний стопор",
+      "dir": [
+        0,
+        -1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-latch",
+      "bounds": {
+        "min": [
+          -0.8360000252723694,
+          0.32750001549720764,
+          -0.8960000276565552
+        ],
+        "max": [
+          -0.2839999794960022,
+          0.8050000071525574,
+          -0.30399999022483826
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "rear-left-spine",
+          "distance": 0.16540192067623127
+        },
+        {
+          "id": "rear-bottom-left",
+          "distance": 0.7054019331931357
+        }
+      ]
+    },
+    {
+      "id": "rear-left-spine",
+      "node": "rear-left-spine",
+      "name": "Задняя левая направляющая",
+      "dir": [
+        0,
+        0,
+        1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-rail",
+      "bounds": {
+        "min": [
+          -0.8360000252723694,
+          -0.26600003242492676,
+          -0.8950000405311584
+        ],
+        "max": [
+          -0.2839999794960022,
+          0.26600003242492676,
+          -0.3850000202655792
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "left-elbow",
+          "distance": 0.2200000137090684
+        },
+        {
+          "id": "front-left",
+          "distance": 0.8200000524520873
+        }
+      ]
+    },
+    {
+      "id": "rear-bottom-left",
+      "node": "rear-bottom-left",
+      "name": "Нижний мост",
+      "dir": [
+        1,
+        0,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-bus",
+      "bounds": {
+        "min": [
+          -0.8349999785423279,
+          -0.8060000538825989,
+          -0.8960000276565552
+        ],
+        "max": [
+          -0.2849999964237213,
+          -0.27399998903274536,
+          -0.30399999022483826
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "lower-bus",
+          "distance": 0.5909999758005142
+        },
+        {
+          "id": "rear-bottom-right",
+          "distance": 1.304605592595728
+        }
+      ]
+    },
+    {
+      "id": "left-elbow",
+      "node": "left-elbow",
+      "name": "Левый теплообменник",
+      "dir": [
+        0,
+        0,
+        1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-coil",
+      "bounds": {
+        "min": [
+          -0.8360000252723694,
+          -0.8060000538825989,
+          -0.29500001668930054
+        ],
+        "max": [
+          -0.2839999794960022,
+          0.26600003242492676,
+          0.2150000035762787
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "front-left",
+          "distance": 0.2200000286102295
+        },
+        {
+          "id": "left-foot",
+          "distance": 0.2200000286102295
+        }
+      ]
+    },
+    {
+      "id": "front-left",
+      "node": "front-left",
+      "name": "Левая силовая рамка",
+      "dir": [
+        1,
+        0,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-frame",
+      "bounds": {
+        "min": [
+          -0.8349999785423279,
+          -0.26600003242492676,
+          0.30399999022483826
+        ],
+        "max": [
+          -0.3199999928474426,
+          0.8060000538825989,
+          0.8960000276565552
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "front-right",
+          "distance": 1.3046055417679872
+        },
+        {
+          "id": "front-panel",
+          "distance": 0.6119999190169586
+        },
+        {
+          "id": "top-guide",
+          "distance": 1.6479999423027039
+        }
+      ]
+    },
+    {
+      "id": "lower-bus",
+      "node": "lower-bus",
+      "name": "Нижняя токовая шина",
+      "dir": [
+        0,
+        0,
+        1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-bus",
+      "bounds": {
+        "min": [
+          -0.2760000228881836,
+          -0.8060000538825989,
+          -0.8950000405311584
+        ],
+        "max": [
+          0.2760000228881836,
+          -0.27399998903274536,
+          0.2150000035762787
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "front-rail",
+          "distance": 1.2830000047883507
+        }
+      ]
+    },
+    {
+      "id": "rear-bottom-right",
+      "node": "rear-bottom-right",
+      "name": "Правая опорная кассета",
+      "dir": [
+        0,
+        0,
+        1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-socket",
+      "bounds": {
+        "min": [
+          0.2839999794960022,
+          -0.8060000538825989,
+          -0.8950000405311584
+        ],
+        "max": [
+          0.8360000252723694,
+          -0.27399998903274536,
+          -0.33550000190734863
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "front-rail",
+          "distance": 0.8200000524520875
+        },
+        {
+          "id": "right-bottom",
+          "distance": 0.22000001370906835
+        }
+      ]
+    },
+    {
+      "id": "front-right",
+      "node": "front-right",
+      "name": "Выходной разъём",
+      "dir": [
+        0,
+        1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-socket",
+      "bounds": {
+        "min": [
+          0.2839999794960022,
+          -0.1979999989271164,
+          0.30399999022483826
+        ],
+        "max": [
+          0.8360000252723694,
+          0.1979999989271164,
+          0.8960000276565552
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "top-guide",
+          "distance": 0.5154019206761603
+        }
+      ]
+    },
+    {
+      "id": "front-panel",
+      "node": "front-panel",
+      "name": "Передний блок управления",
+      "dir": [
+        1,
+        0,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-panel",
+      "bounds": {
+        "min": [
+          -0.22499999403953552,
+          -0.26600003242492676,
+          0.30399999022483826
+        ],
+        "max": [
+          0.22499999403953552,
+          0.8060000538825989,
+          0.8960000276565552
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "front-right",
+          "distance": 0.5504019021987204
+        },
+        {
+          "id": "top-guide",
+          "distance": 0.5504019021987204
+        }
+      ]
+    },
+    {
+      "id": "front-rail",
+      "node": "front-rail",
+      "name": "Передняя крепёжная рейка",
+      "dir": [
+        0,
+        1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-rail",
+      "bounds": {
+        "min": [
+          -0.2760000228881836,
+          -0.8050000071525574,
+          0.30399999022483826
+        ],
+        "max": [
+          0.8360000252723694,
+          -0.32750001549720764,
+          0.8960000276565552
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "front-right",
+          "distance": 0.5154019743204116
+        },
+        {
+          "id": "front-panel",
+          "distance": 0.49500004947185516
+        },
+        {
+          "id": "top-guide",
+          "distance": 1.0554019868373161
+        }
+      ]
+    },
+    {
+      "id": "right-bottom",
+      "node": "right-bottom",
+      "name": "Нижний индукционный блок",
+      "dir": [
+        0,
+        1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-coil",
+      "bounds": {
+        "min": [
+          0.2839999794960022,
+          -0.8050000071525574,
+          -0.29600003361701965
+        ],
+        "max": [
+          0.8360000252723694,
+          -0.320000022649765,
+          0.29600003361701965
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "top-guide",
+          "distance": 1.0554019868373161
+        },
+        {
+          "id": "right-side",
+          "distance": 0.5154019743204116
+        }
+      ]
+    },
+    {
+      "id": "left-foot",
+      "node": "left-foot",
+      "name": "Нижний фиксатор",
+      "dir": [
+        0,
+        1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-latch",
+      "bounds": {
+        "min": [
+          -0.8360000252723694,
+          -0.8050000071525574,
+          0.30399999022483826
+        ],
+        "max": [
+          -0.2839999794960022,
+          -0.32750001549720764,
+          0.8960000276565552
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "front-left",
+          "distance": 0.5154019743204115
+        }
+      ]
+    },
+    {
+      "id": "top-guide",
+      "node": "top-guide",
+      "name": "Верхний охлаждающий канал",
+      "dir": [
+        0,
+        0,
+        -1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-radiator",
+      "bounds": {
+        "min": [
+          0.2839999794960022,
+          0.27399998903274536,
+          -0.29500001668930054
+        ],
+        "max": [
+          0.8360000252723694,
+          0.8060000538825989,
+          0.8950000405311584
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "rear-release",
+          "distance": 1.1550000607967377
+        }
+      ]
+    },
+    {
+      "id": "right-side",
+      "node": "right-side",
+      "name": "Боковая муфта",
+      "dir": [
+        0,
+        0,
+        -1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-socket",
+      "bounds": {
+        "min": [
+          0.2839999794960022,
+          -0.26600003242492676,
+          -0.29500001668930054
+        ],
+        "max": [
+          0.8360000252723694,
+          0.26600003242492676,
+          0.2645000219345093
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "rear-crossbar",
+          "distance": 0.5550000071525574
+        }
+      ]
+    },
+    {
+      "id": "rear-crossbar",
+      "node": "rear-crossbar",
+      "name": "Задняя поперечина",
+      "dir": [
+        -1,
+        0,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-rail",
+      "bounds": {
+        "min": [
+          0.3199999928474426,
+          -0.26600003242492676,
+          -0.8960000276565552
+        ],
+        "max": [
+          0.8349999785423279,
+          0.26600003242492676,
+          -0.30399999022483826
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "rear-left-spine",
+          "distance": 1.137999951839447
+        },
+        {
+          "id": "service-key",
+          "distance": 0.5879999548196793
+        }
+      ]
+    },
+    {
+      "id": "rear-release",
+      "node": "rear-release",
+      "name": "Задний съёмный фиксатор",
+      "dir": [
+        0,
+        0,
+        -1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-release",
+      "bounds": {
+        "min": [
+          0.2839999794960022,
+          0.27399998903274536,
+          -0.8950000405311584
+        ],
+        "max": [
+          0.8360000252723694,
+          0.8060000538825989,
+          -0.3850000202655792
+        ]
+      },
+      "pathBlockers": []
+    },
+    {
+      "id": "service-key",
+      "node": "service-key",
+      "name": "Сервисный блок",
+      "dir": [
+        0,
+        1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "cassette-service",
+      "bounds": {
+        "min": [
+          -0.2760000228881836,
+          -0.2199999988079071,
+          -0.8960000276565552
+        ],
+        "max": [
+          0.2760000228881836,
+          0.8050000071525574,
+          -0.30399999022483826
+        ]
+      },
+      "pathBlockers": []
+    }
+  ],
+  "tutorial": null,
+  "reaction": "Производитель обещал один блок. Мы насчитали двадцать.",
+  "mechanicalProof": {
+    "allAxesPairs": 2280,
+    "controls": 54,
+    "deadlocks": 0,
+    "earlyCore": 0,
+    "triangleSource": "Actual GLB reimport",
+    "gateSHA256": "5e7398ac4bd24f1f463f6b2d39d1e625b711a02ea377bca42ac7776b4e70f55d",
+    "layoutSHA256": "e3c6fbec9332590675186286172162a505934702944f41fb77775de77f540126",
+    "transitions": 94,
+    "completeSolutionPaths": 446
+  }
+}

@@ -395,3 +395,17 @@ body[data-instruction-owner] #spatial-action{padding:9px 10px;font-size:13px;lin
 
 /* Reserve the isolated QA footer on short and wide desktop views too. */
 @media(min-width:901px){body[data-story-qa=true] .workshop{margin-top:12px;row-gap:14px}body[data-story-qa=true] .stage{max-height:calc(100dvh - 330px)}}
+
+/* One actual campaign cassette, in the existing workshop and archive. */
+.campaign-cassette{display:flex;align-items:center;gap:16px;padding:12px 16px;margin:8px 0 12px;border-color:#bf9f61}
+.campaign-cassette img{width:110px;height:110px;object-fit:contain;flex:0 0 auto;filter:drop-shadow(0 5px 6px #0008)}
+.campaign-cassette>div{display:grid;gap:5px;min-width:0}.campaign-cassette small{font:400 9px 'Russo One';color:#9ad5cc}.campaign-cassette strong{font:400 17px 'Russo One';color:#ffe0a2}.campaign-cassette p{margin:0;font-size:12px;line-height:1.35}.campaign-cassette .tool{font-size:12px;min-height:44px;justify-self:start}
+.meta-world[data-page=hub][data-order=cassette001] .stand-teapot{width:54%;margin-left:13%;border-radius:0}
+.meta-world[data-page=hub][data-order=cassette001] .stand-zone{pointer-events:none}
+.meta-world[data-page=hub][data-order=cassette001] .stand-zone button{pointer-events:auto}
+body[data-family=cassette001] .inspector{display:none}
+body[data-family=cassette001] .job-heading h1{font-size:20px;overflow-wrap:anywhere}
+@media(max-width:900px) and (orientation:portrait){body[data-family=cassette001] .workshop{grid-template-rows:54px 90px minmax(0,1fr) 58px}body[data-family=cassette001] .job-heading h1{font-size:22px}.campaign-cassette{gap:9px;padding:10px;margin:5px 0 9px}.campaign-cassette img{width:86px;height:86px}.campaign-cassette strong{font-size:13px}.campaign-cassette small{font-size:7px}.campaign-cassette p{font-size:10px}.campaign-cassette .tool{font-size:10px;padding:7px 14px}.meta-world[data-page=hub][data-order=cassette001] .stand-teapot{width:54%;margin-left:13%}}
+@media(max-width:340px) and (orientation:portrait){body[data-family=cassette001] .workshop{grid-template-rows:50px 82px minmax(0,1fr) 56px}body[data-family=cassette001] .job-heading h1{font-size:19px}.campaign-cassette img{width:70px;height:80px}.campaign-cassette strong{font-size:12px}}
+
+.cassette-observer{display:none}body[data-family=cassette001] .cassette-observer{display:block;grid-column:3;grid-row:2;align-self:center;justify-self:center;width:90%;max-width:240px;filter:drop-shadow(0 10px 12px #0009)}@media(max-width:900px){body[data-family=cassette001] .cassette-observer{display:none}}

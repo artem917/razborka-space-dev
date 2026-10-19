@@ -1,0 +1,2 @@
+// Generated only after this family passes actual-GLB native gates.
+export const CASSETTE_ASSET={"schema":1,"family":"cassette001","rawSHA256":"5224ec9847350bc971a04d887d5cff0d50619f8ceeb28857c932be6fd0351612","rawBytes":6750348,"gzipSHA256":"97e861adeef72b68d8ed536982b9df52bc70ee668aa18338a289377257bc8d7d","gzipBytes":385869,"certificateSHA256":"4dde9f0b07ae51b1f4ceaaab2188515630c21a93a05e1a32362581f7c687afa5","certificateBytes":15326};
