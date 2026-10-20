@@ -1,0 +1,14 @@
+/* V2-only controls; the published arch02 stylesheet remains unchanged. */
+#pilot-root .pilot-overlay{overflow:auto;align-items:start;padding:12px;background:#102833f2}
+#pilot-root .pilot-card{margin:auto;width:100%;max-width:460px;padding:6px 0}
+#pilot-root .pilot-heading h1{font-size:18px}
+#pilot-root .v2-field{display:block;text-align:left;margin:10px 0;font-size:13px}
+#pilot-root select{display:block;width:100%;font:inherit;min-height:44px;margin-top:5px;padding:8px;background:#17353f;color:#f2efde;border:1px solid #739493;border-radius:8px;max-width:100%}
+#pilot-root select:focus-visible{outline:3px solid #ffc97c}
+#pilot-root .v2-disclaimer{font-size:12px;line-height:1.4}
+#pilot-root .v2-navigation{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+#pilot-root .v2-survey{text-align:left;font-size:13px;border-top:1px solid #506e72;margin-top:12px;padding-top:4px}
+#pilot-root .v2-survey label{display:block;margin:9px 0}
+#pilot-root .v2-survey p{font-size:12px}
+@media(min-width:901px){#pilot-root .pilot-heading h1{font-size:26px}#pilot-root .pilot-card{max-width:510px}}
+@media(max-width:350px){#pilot-root .pilot-heading h1{font-size:15px}#pilot-root .pilot-header{gap:3px}#pilot-root .pilot-count{flex-basis:55px;min-width:55px;font-size:20px}#pilot-root .pilot-card h2{font-size:21px}#pilot-root .pilot-note{font-size:10px}#pilot-root .v2-navigation button{font-size:12px}#pilot-root .pilot-feedback{font-size:12px;height:40px;min-height:40px;flex-basis:40px}}

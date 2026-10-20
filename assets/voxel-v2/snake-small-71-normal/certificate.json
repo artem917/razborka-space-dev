@@ -1,0 +1,473 @@
+{
+  "schema": 2,
+  "id": "snake-small-71-normal",
+  "family": "research-voxel-v2",
+  "name": "Пространственная змейка",
+  "asset": "./certificates/snake-small-71-normal/mechanical-candidate.glb",
+  "assetSHA256": "e5da58624cfe9bce1ec91946a9b4105ee93a3ba87d844bb90f869ed53691cf8e",
+  "pathDistance": 6,
+  "reachableStates": 113,
+  "proofMode": "EXHAUSTIVE",
+  "solution": [
+    "b00",
+    "b03",
+    "b08",
+    "b09",
+    "b07",
+    "b12",
+    "b11",
+    "b13",
+    "b04",
+    "b05",
+    "b06",
+    "b02",
+    "b01",
+    "core"
+  ],
+  "initiallyAccessible": [
+    "b00",
+    "b03",
+    "b05",
+    "b07",
+    "b08"
+  ],
+  "status": "NATIVE_GLB_CERTIFIED",
+  "pieces": [
+    {
+      "id": "b00",
+      "node": "b00",
+      "name": "Модуль 0",
+      "dir": [
+        0,
+        0,
+        1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          -0.23199999332427979,
+          -0.23199999332427979,
+          -0.23200002312660217
+        ],
+        "max": [
+          0.23200002312660217,
+          0.23200002312660217,
+          0.23199999332427979
+        ]
+      },
+      "pathBlockers": []
+    },
+    {
+      "id": "b01",
+      "node": "b01",
+      "name": "Модуль 1",
+      "dir": [
+        1,
+        0,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          0.2680000066757202,
+          -0.23199999332427979,
+          -0.23200002312660217
+        ],
+        "max": [
+          0.7319999933242798,
+          0.23200002312660217,
+          0.23199999332427979
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "b02",
+          "distance": 0.4999999403953552
+        }
+      ]
+    },
+    {
+      "id": "b02",
+      "node": "b02",
+      "name": "Модуль 2",
+      "dir": [
+        0,
+        0,
+        -1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          0.7680000066757202,
+          -0.23199999332427979,
+          -0.23200002312660217
+        ],
+        "max": [
+          1.2320001125335693,
+          0.23200002312660217,
+          0.23199999332427979
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "b03",
+          "distance": 0.4999999999999999
+        },
+        {
+          "id": "b06",
+          "distance": 1
+        }
+      ]
+    },
+    {
+      "id": "b03",
+      "node": "b03",
+      "name": "Модуль 3",
+      "dir": [
+        0,
+        1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          0.7680000066757202,
+          -0.23199999332427979,
+          -0.7319999933242798
+        ],
+        "max": [
+          1.2320001125335693,
+          0.23200002312660217,
+          -0.2680000066757202
+        ]
+      },
+      "pathBlockers": []
+    },
+    {
+      "id": "b04",
+      "node": "b04",
+      "name": "Модуль 4",
+      "dir": [
+        0,
+        1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          -0.23199999332427979,
+          -0.23199999332427979,
+          -1.2320001125335693
+        ],
+        "max": [
+          0.23200002312660217,
+          0.23200002312660217,
+          -0.7680000066757202
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "b08",
+          "distance": 0.4999999999999999
+        },
+        {
+          "id": "b13",
+          "distance": 0.9999999701976776
+        }
+      ]
+    },
+    {
+      "id": "b05",
+      "node": "b05",
+      "name": "Модуль 5",
+      "dir": [
+        0,
+        -1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          0.2680000066757202,
+          -0.23199999332427979,
+          -1.2320001125335693
+        ],
+        "max": [
+          0.7319999933242798,
+          0.23200002312660217,
+          -0.7680000066757202
+        ]
+      },
+      "pathBlockers": []
+    },
+    {
+      "id": "b06",
+      "node": "b06",
+      "name": "Модуль 6",
+      "dir": [
+        -1,
+        0,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          0.7680000066757202,
+          -0.23199999332427979,
+          -1.2320001125335693
+        ],
+        "max": [
+          1.2320001125335693,
+          0.23200002312660217,
+          -0.7680000066757202
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "b04",
+          "distance": 0.5460016762780667
+        },
+        {
+          "id": "b05",
+          "distance": 0.046001676269463755
+        }
+      ]
+    },
+    {
+      "id": "b07",
+      "node": "b07",
+      "name": "Модуль 7",
+      "dir": [
+        0,
+        0,
+        1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          0.2680000066757202,
+          0.2680000066757202,
+          -0.7319999933242798
+        ],
+        "max": [
+          0.7319999933242798,
+          0.7319999933242798,
+          -0.2680000066757202
+        ]
+      },
+      "pathBlockers": []
+    },
+    {
+      "id": "b08",
+      "node": "b08",
+      "name": "Модуль 8",
+      "dir": [
+        0,
+        0,
+        1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          -0.23199999332427979,
+          0.2680000066757202,
+          -1.2320001125335693
+        ],
+        "max": [
+          0.23200002312660217,
+          0.7319999933242798,
+          -0.7680000066757202
+        ]
+      },
+      "pathBlockers": []
+    },
+    {
+      "id": "b09",
+      "node": "b09",
+      "name": "Модуль 9",
+      "dir": [
+        0,
+        -1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          -0.23199999332427979,
+          0.7680000066757202,
+          -0.23200002312660217
+        ],
+        "max": [
+          0.23200002312660217,
+          1.2320001125335693,
+          0.23199999332427979
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "b00",
+          "distance": 0.6593847195974146
+        }
+      ]
+    },
+    {
+      "id": "core",
+      "node": "core",
+      "name": "Энергоузел",
+      "dir": [
+        0,
+        -1,
+        0
+      ],
+      "stage": "core",
+      "core": true,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          0.2680000066757202,
+          0.7680000066757202,
+          -0.23200002312660217
+        ],
+        "max": [
+          0.7319999933242798,
+          1.2320001125335693,
+          0.23199999332427979
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "b01",
+          "distance": 0.6593847195974147
+        }
+      ]
+    },
+    {
+      "id": "b11",
+      "node": "b11",
+      "name": "Модуль 11",
+      "dir": [
+        1,
+        0,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          -0.23199999332427979,
+          0.7680000066757202,
+          -0.7319999933242798
+        ],
+        "max": [
+          0.23200002312660217,
+          1.2320001125335693,
+          -0.2680000066757202
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "b12",
+          "distance": 0.4999999999999999
+        }
+      ]
+    },
+    {
+      "id": "b12",
+      "node": "b12",
+      "name": "Модуль 12",
+      "dir": [
+        0,
+        -1,
+        0
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          0.2680000066757202,
+          0.7680000066757202,
+          -0.7319999933242798
+        ],
+        "max": [
+          0.7319999933242798,
+          1.2320001125335693,
+          -0.2680000066757202
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "b07",
+          "distance": 0.1593847207622661
+        }
+      ]
+    },
+    {
+      "id": "b13",
+      "node": "b13",
+      "name": "Модуль 13",
+      "dir": [
+        0,
+        0,
+        1
+      ],
+      "stage": "inner",
+      "core": false,
+      "libraryType": "research-instrument",
+      "bounds": {
+        "min": [
+          -0.23199999332427979,
+          0.7680000066757202,
+          -1.2320001125335693
+        ],
+        "max": [
+          0.23200002312660217,
+          1.2320001125335693,
+          -0.7680000066757202
+        ]
+      },
+      "pathBlockers": [
+        {
+          "id": "b09",
+          "distance": 0.6520017420557849
+        },
+        {
+          "id": "b11",
+          "distance": 0.15200180166042954
+        }
+      ]
+    }
+  ],
+  "mechanicalProof": {
+    "triangleSource": "Actual GLB reimport",
+    "gateSHA256": "6d9bb416fdae3dc81e05d488fbd6ee959c9f56ef21d3e79ebb846e361729d0ed",
+    "layoutSHA256": "d69f86b04139ca3ccadff666035603489499d4234b207115ebdebdc3d0a9fcb0",
+    "allAxesPairs": 1092,
+    "controls": 54,
+    "deadlocks": 0,
+    "earlyCore": 0,
+    "proofMode": "EXHAUSTIVE",
+    "structuralCoreAncestors": 13
+  }
+}
